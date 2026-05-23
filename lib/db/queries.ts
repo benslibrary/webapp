@@ -81,12 +81,14 @@ export async function upsertUserFromNaver(
     const existing = await getUserByNaverId(profile.naverId);
 
     if (existing) {
+      // Re-login: don't clobber user-editable fields. nickname is set
+      // by the user via /me's NicknameEditor and must persist across
+      // Naver re-auths; name and email also stay put after first
+      // signup. Only refresh profileImage (so a new Naver avatar
+      // shows up) and updatedAt.
       const [updated] = await db
         .update(user)
         .set({
-          email: profile.email,
-          nickname: profile.nickname,
-          name: profile.name,
           profileImage: profile.profileImage,
           updatedAt: new Date(),
         })

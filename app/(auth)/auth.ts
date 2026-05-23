@@ -101,8 +101,15 @@ export const {
         profileImage: user.profileImage ?? null,
       });
 
+      // Carry the DB row's user-editable fields into the user object
+      // so the jwt() callback below picks them up — otherwise a
+      // re-login would propagate Naver's nickname into the JWT and
+      // overwrite the user's customized one in the session.
       user.id = dbUser.id;
       user.role = dbUser.role;
+      user.nickname = dbUser.nickname ?? null;
+      user.realName = dbUser.name ?? null;
+      user.profileImage = dbUser.profileImage ?? null;
       return true;
     },
     jwt({ token, user, trigger, session }) {
