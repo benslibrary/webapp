@@ -2,84 +2,112 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth-helpers";
-import { deleteBookByIsbn, upsertBook } from "@/lib/db/queries";
-import { lookupBookByIsbn, normalizeIsbn } from "@/lib/nat-lib";
+import { fetchAndUploadCover } from "@/lib/cover-storage";
+import {
+  deleteBookByIsbn,
+  findExistingIsbns,
+  upsertBook,
+} from "@/lib/db/queries";
+import {
+  type BookMetadata,
+  lookupBookByIsbn,
+  normalizeIsbn,
+  searchBooks,
+} from "@/lib/nat-lib";
 
-export type AddBookResult = {
-  isbn: string;
-  status: "added" | "updated" | "failed";
-  title?: string;
-  reason?: string;
-};
+export type SearchCandidate = BookMetadata & { alreadyInCatalog: boolean };
 
-export type AddBooksState = {
-  results: AddBookResult[];
-};
+export type SearchBooksState =
+  | { status: "idle" }
+  | { status: "ok"; candidates: SearchCandidate[]; query: string }
+  | { status: "error"; message: string };
 
-const ISBN_SPLIT_REGEX = /[\s,]+/;
+const INITIAL_SEARCH_STATE: SearchBooksState = { status: "idle" };
 
-export async function addBooksAction(
-  _prev: AddBooksState,
+function describeQuery(title: string, author: string): string {
+  if (title && author) {
+    return `${title} · ${author}`;
+  }
+  return title || author;
+}
+
+export async function searchBooksAction(
+  _prev: SearchBooksState,
   formData: FormData
-): Promise<AddBooksState> {
+): Promise<SearchBooksState> {
+  await requireAdmin();
+  const title = String(formData.get("title") ?? "").trim();
+  const author = String(formData.get("author") ?? "").trim();
+
+  if (!(title || author)) {
+    return INITIAL_SEARCH_STATE;
+  }
+
+  const result = await searchBooks({ title, author, limit: 12 });
+  if (!result.ok) {
+    return { status: "error", message: result.reason };
+  }
+
+  const existing = await findExistingIsbns(
+    result.candidates.map((c) => c.isbn)
+  );
+  const candidates: SearchCandidate[] = result.candidates.map((c) => ({
+    ...c,
+    alreadyInCatalog: existing.has(c.isbn),
+  }));
+  return {
+    status: "ok",
+    candidates,
+    query: describeQuery(title, author),
+  };
+}
+
+export type AddBookResult =
+  | { status: "added"; isbn: string; title: string }
+  | { status: "updated"; isbn: string; title: string }
+  | { status: "failed"; isbn: string; reason: string };
+
+export async function addBookByIsbnAction(
+  formData: FormData
+): Promise<AddBookResult> {
   const session = await requireAdmin();
-
-  const raw = String(formData.get("isbns") ?? "").trim();
-  if (!raw) {
-    return { results: [] };
+  const rawIsbn = String(formData.get("isbn") ?? "").trim();
+  const normalized = normalizeIsbn(rawIsbn);
+  if (!normalized) {
+    return {
+      status: "failed",
+      isbn: rawIsbn,
+      reason: "ISBN 형식이 올바르지 않습니다",
+    };
   }
 
-  const tokens = raw
-    .split(ISBN_SPLIT_REGEX)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-
-  const results: AddBookResult[] = [];
-
-  for (const token of tokens) {
-    const normalized = normalizeIsbn(token);
-    if (!normalized) {
-      results.push({
-        isbn: token,
-        status: "failed",
-        reason: "ISBN 형식 오류 (10/13자리 숫자)",
-      });
-      continue;
-    }
-
-    const lookup = await lookupBookByIsbn(normalized);
-    if (!lookup.ok) {
-      results.push({
-        isbn: normalized,
-        status: "failed",
-        reason: lookup.reason,
-      });
-      continue;
-    }
-
-    try {
-      const { book: saved, created } = await upsertBook({
-        metadata: lookup.metadata,
-        addedByUserId: session.user.id,
-      });
-      results.push({
-        isbn: saved.isbn,
-        status: created ? "added" : "updated",
-        title: saved.title,
-      });
-    } catch (_error) {
-      results.push({
-        isbn: normalized,
-        status: "failed",
-        reason: "DB 저장 실패",
-      });
-    }
+  const lookup = await lookupBookByIsbn(normalized);
+  if (!lookup.ok) {
+    return { status: "failed", isbn: normalized, reason: lookup.reason };
   }
 
-  revalidatePath("/admin/books");
-  revalidatePath("/books");
-  updateTag("books");
-  return { results };
+  // Upload the cover to Blob so we don't leave an external URL in the row.
+  const coverUrl = await fetchAndUploadCover(
+    normalized,
+    lookup.metadata.coverImageUrl
+  );
+
+  try {
+    const { book: saved, created } = await upsertBook({
+      metadata: { ...lookup.metadata, coverImageUrl: coverUrl },
+      addedByUserId: session.user.id,
+    });
+    revalidatePath("/admin/books");
+    revalidatePath("/books");
+    updateTag("books");
+    return {
+      status: created ? "added" : "updated",
+      isbn: saved.isbn,
+      title: saved.title,
+    };
+  } catch (_error) {
+    return { status: "failed", isbn: normalized, reason: "DB 저장 실패" };
+  }
 }
 
 export async function deleteBookAction(formData: FormData): Promise<void> {

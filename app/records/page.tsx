@@ -31,7 +31,7 @@ async function Content() {
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
       <div className="relative flex w-full max-w-[430px] flex-col pb-32">
-        <header className="flex items-start justify-between px-7 pt-12">
+        <header className="sticky top-0 z-40 flex items-start justify-between border-zinc-900 border-b bg-black/90 px-7 pt-12 pb-4 backdrop-blur-lg">
           <div>
             <h1 className="font-bold text-[26px] text-white">기록</h1>
             <p className="mt-1 text-[13px] text-zinc-500">
@@ -53,7 +53,7 @@ async function Content() {
             <br />첫 독서 감상을 남겨보세요.
           </p>
         ) : (
-          <ul className="mt-8 flex flex-col gap-3 px-5">
+          <ul className="mt-6 flex flex-col gap-3 px-5">
             {records.map((r, i) => (
               <li key={r.id}>
                 <Link

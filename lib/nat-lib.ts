@@ -160,3 +160,106 @@ export async function lookupBookByIsbn(rawIsbn: string): Promise<LookupResult> {
     },
   };
 }
+
+export type SearchResult =
+  | { ok: true; candidates: BookMetadata[] }
+  | { ok: false; reason: string };
+
+/**
+ * Search NL's 서지정보 (seoji/CIP) index by title and/or author. Returns
+ * up to `limit` candidates that have a usable ISBN + title. Intended for
+ * admin-driven catalog discovery — the admin picks one and we then run
+ * the same lookupBookByIsbn pipeline on it.
+ */
+export async function searchBooks({
+  title,
+  author,
+  limit = 10,
+}: {
+  title?: string;
+  author?: string;
+  limit?: number;
+}): Promise<SearchResult> {
+  const titleQuery = title?.trim() ?? "";
+  const authorQuery = author?.trim() ?? "";
+  if (!(titleQuery || authorQuery)) {
+    return { ok: false, reason: "제목 또는 작가를 입력해주세요" };
+  }
+
+  const apiKey = process.env.NAT_LIB_API_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      reason: "NAT_LIB_API_KEY 환경변수가 설정되어 있지 않습니다",
+    };
+  }
+
+  const url = new URL(SEOJI_URL);
+  url.searchParams.set("cert_key", apiKey);
+  url.searchParams.set("result_style", "json");
+  url.searchParams.set("page_no", "1");
+  url.searchParams.set("page_size", String(Math.max(1, Math.min(limit, 50))));
+  if (titleQuery) {
+    url.searchParams.set("title", titleQuery);
+  }
+  if (authorQuery) {
+    url.searchParams.set("author", authorQuery);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      next: { revalidate: 60 },
+    });
+  } catch (_error) {
+    return { ok: false, reason: "국립중앙도서관 서버에 접속할 수 없습니다" };
+  }
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      reason: `국립중앙도서관 응답 오류 (HTTP ${res.status})`,
+    };
+  }
+
+  let body: SeojiResponse;
+  try {
+    body = (await res.json()) as SeojiResponse;
+  } catch (_error) {
+    return { ok: false, reason: "응답을 JSON으로 해석할 수 없습니다" };
+  }
+
+  if (body.ERROR_CODE && body.ERROR_CODE !== "0") {
+    return {
+      ok: false,
+      reason: `국립중앙도서관 오류: ${body.MESSAGE ?? body.ERROR_CODE}`,
+    };
+  }
+
+  const docs = body.docs ?? [];
+  const seen = new Set<string>();
+  const candidates: BookMetadata[] = [];
+  for (const doc of docs) {
+    const isbn = normalizeIsbn(doc.EA_ISBN ?? "");
+    const docTitle = trimOrNull(doc.TITLE);
+    if (!(isbn && docTitle)) {
+      continue;
+    }
+    if (seen.has(isbn)) {
+      continue;
+    }
+    seen.add(isbn);
+    candidates.push({
+      isbn,
+      title: docTitle,
+      author: trimOrNull(doc.AUTHOR),
+      publisher: trimOrNull(doc.PUBLISHER),
+      publishDate: trimOrNull(doc.PUBLISH_PREDATE),
+      coverImageUrl: trimOrNull(doc.TITLE_URL),
+      description: trimOrNull(doc.BOOK_INTRODUCTION_URL),
+      kdc: trimOrNull(doc.KDC),
+    });
+  }
+
+  return { ok: true, candidates };
+}

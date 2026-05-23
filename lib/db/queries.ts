@@ -1,7 +1,16 @@
 import "server-only";
 
 import { neon } from "@neondatabase/serverless";
-import { and, asc, between, desc, eq, lt, sql as sqlOp } from "drizzle-orm";
+import {
+  and,
+  asc,
+  between,
+  desc,
+  eq,
+  inArray,
+  lt,
+  sql as sqlOp,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { AppError } from "../errors";
 import { getPostgresUrl } from "./connection";
@@ -401,6 +410,49 @@ export async function listBooks({
     return await db.select().from(book).orderBy(asc(book.title)).limit(limit);
   } catch (_error) {
     throw new AppError("bad_request:database", "Failed to list books");
+  }
+}
+
+export async function listRecentBooks({
+  limit = 10,
+}: {
+  limit?: number;
+} = {}): Promise<Book[]> {
+  try {
+    return await db
+      .select()
+      .from(book)
+      .orderBy(desc(book.createdAt))
+      .limit(limit);
+  } catch (_error) {
+    throw new AppError("bad_request:database", "Failed to list recent books");
+  }
+}
+
+export async function findExistingIsbns(isbns: string[]): Promise<Set<string>> {
+  if (isbns.length === 0) {
+    return new Set();
+  }
+  try {
+    const rows = await db
+      .select({ isbn: book.isbn })
+      .from(book)
+      .where(inArray(book.isbn, isbns));
+    return new Set(rows.map((r) => r.isbn));
+  } catch (_error) {
+    throw new AppError("bad_request:database", "Failed to find existing ISBNs");
+  }
+}
+
+export async function deleteRecordById(recordId: string): Promise<boolean> {
+  try {
+    const deleted = await db
+      .delete(record)
+      .where(eq(record.id, recordId))
+      .returning({ id: record.id });
+    return deleted.length > 0;
+  } catch (_error) {
+    throw new AppError("bad_request:database", "Failed to delete record");
   }
 }
 
