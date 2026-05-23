@@ -54,7 +54,7 @@ async function Content() {
           </p>
         ) : (
           <ul className="mt-8 flex flex-col gap-3 px-5">
-            {records.map((r) => (
+            {records.map((r, i) => (
               <li key={r.id}>
                 <Link
                   className="flex gap-3 rounded-[16px] border border-zinc-900 bg-[#121212] p-4 transition-all active:scale-[0.99]"
@@ -65,6 +65,7 @@ async function Content() {
                       alt={r.bookTitle}
                       className="rounded object-cover"
                       height={84}
+                      priority={i === 0}
                       src={r.bookCoverImageUrl}
                       width={60}
                     />

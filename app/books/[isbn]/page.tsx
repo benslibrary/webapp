@@ -61,6 +61,7 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
               alt={book.title}
               className="rounded-lg object-cover shadow-2xl shadow-black"
               height={168}
+              priority
               src={book.coverImageUrl}
               width={120}
             />

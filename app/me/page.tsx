@@ -97,6 +97,7 @@ async function MeContent() {
               alt="프로필 사진"
               className="rounded-full"
               height={64}
+              priority
               src={profileImage}
               width={64}
             />

@@ -45,14 +45,18 @@ export function RecordForm({
   );
 
   const filteredBooks = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // strip whitespace from both sides — NL stores some titles with
+    // unexpected spaces (e.g. "자유로 부터의 도피") and we don't want
+    // the user's "자유로부터의 도피" query to miss those.
+    const q = query.trim().toLowerCase().replace(/\s+/g, "");
     if (!q) {
       return [];
     }
     return books
       .filter((b) => {
-        const titleHit = b.title.toLowerCase().includes(q);
-        const authorHit = b.author?.toLowerCase().includes(q) ?? false;
+        const titleHit = b.title.toLowerCase().replace(/\s+/g, "").includes(q);
+        const authorHit =
+          b.author?.toLowerCase().replace(/\s+/g, "").includes(q) ?? false;
         return titleHit || authorHit;
       })
       .slice(0, MAX_RESULTS);
