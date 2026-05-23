@@ -77,3 +77,29 @@ export const post = pgTable(
 );
 
 export type Post = InferSelectModel<typeof post>;
+
+export const book = pgTable(
+  "Book",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    isbn: varchar("isbn", { length: 13 }).notNull(),
+    title: text("title").notNull(),
+    author: text("author"),
+    publisher: varchar("publisher", { length: 200 }),
+    publishDate: varchar("publishDate", { length: 8 }),
+    coverImageUrl: text("coverImageUrl"),
+    description: text("description"),
+    kdc: varchar("kdc", { length: 16 }),
+    addedByUserId: uuid("addedByUserId").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    fetchedAt: timestamp("fetchedAt").notNull().defaultNow(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    isbnIdx: uniqueIndex("Book_isbn_idx").on(table.isbn),
+    titleIdx: index("Book_title_idx").on(table.title),
+  })
+);
+
+export type Book = InferSelectModel<typeof book>;
