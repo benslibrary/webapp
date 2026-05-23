@@ -16,12 +16,11 @@ test.describe("smoke", () => {
     await expect(page.getByText("네이버로 로그인")).toBeVisible();
   });
 
-  test("anonymous landing shows login CTA, no stamp UI", async ({ page }) => {
+  test("/ redirects anonymous visitor to /login", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: "시작하기" })).toBeVisible();
-    await expect(page.getByText("매장에 방문 후 로그인")).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
     // The legacy mock 4-step flow (Opening / Onboarding / StampCard /
-    // Dashboard) must not be reachable from / for anonymous visitors.
+    // Dashboard) must not be reachable for anonymous visitors.
     await expect(page.getByText("Stamp Card")).not.toBeVisible();
   });
 });
