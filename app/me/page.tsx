@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth, signOut } from "@/app/(auth)/auth";
@@ -65,19 +66,29 @@ async function MeContent() {
       <div className="relative flex w-full max-w-[430px] flex-col px-7 pt-12 pb-32">
         <header className="flex items-center justify-between">
           <h1 className="font-bold text-[26px] text-white">내 정보</h1>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button
-              className="text-[13px] text-zinc-500 underline-offset-2 hover:underline"
-              type="submit"
+          <div className="flex items-center gap-4">
+            {role === "admin" && (
+              <Link
+                className="text-[13px] text-zinc-500 underline-offset-2 hover:underline"
+                href="/admin/books"
+              >
+                관리자
+              </Link>
+            )}
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/" });
+              }}
             >
-              로그아웃
-            </button>
-          </form>
+              <button
+                className="text-[13px] text-zinc-500 underline-offset-2 hover:underline"
+                type="submit"
+              >
+                로그아웃
+              </button>
+            </form>
+          </div>
         </header>
 
         <section className="mt-8 flex items-center gap-4 rounded-[24px] border border-zinc-900 bg-[#121212] p-6">
