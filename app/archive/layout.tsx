@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { ArchiveFontLoader } from "@/components/archive/font-loader";
-import "./archive.css";
 
 export const metadata: Metadata = {
   title: "출석",
@@ -18,10 +16,5 @@ export default function ArchiveLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="archive-theme archive-shell min-h-dvh">
-      <ArchiveFontLoader />
-      {children}
-    </div>
-  );
+  return children;
 }

@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, between, desc, eq, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { ChatSDKError } from "../errors";
+import { AppError } from "../errors";
 import { getPostgresUrl } from "./connection";
 import {
   type Book,
@@ -29,7 +29,7 @@ export async function getUserByNaverId(naverId: string): Promise<User | null> {
       .limit(1);
     return row ?? null;
   } catch (_error) {
-    throw new ChatSDKError(
+    throw new AppError(
       "bad_request:database",
       "Failed to get user by Naver id"
     );
@@ -77,10 +77,7 @@ export async function upsertUserFromNaver(
       .returning();
     return inserted;
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to upsert Naver user"
-    );
+    throw new AppError("bad_request:database", "Failed to upsert Naver user");
   }
 }
 
@@ -99,7 +96,7 @@ export async function updateUserNickname({
       .returning();
     return updated ?? null;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to update nickname");
+    throw new AppError("bad_request:database", "Failed to update nickname");
   }
 }
 
@@ -119,7 +116,7 @@ export async function recordVisit({
       .returning();
     return inserted;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to record visit");
+    throw new AppError("bad_request:database", "Failed to record visit");
   }
 }
 
@@ -141,10 +138,7 @@ export async function getVisitsForUserInRange({
       )
       .orderBy(asc(visit.visitedAt));
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to get visits for user"
-    );
+    throw new AppError("bad_request:database", "Failed to get visits for user");
   }
 }
 
@@ -163,10 +157,7 @@ export async function getRecentVisitsByUser({
       .orderBy(desc(visit.visitedAt))
       .limit(limit);
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to get recent visits"
-    );
+    throw new AppError("bad_request:database", "Failed to get recent visits");
   }
 }
 
@@ -211,7 +202,7 @@ export async function listRecords({
       .orderBy(desc(record.createdAt))
       .limit(limit);
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to list records");
+    throw new AppError("bad_request:database", "Failed to list records");
   }
 }
 
@@ -232,10 +223,7 @@ export async function listRecordsByUser({
       .orderBy(desc(record.createdAt))
       .limit(limit);
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to list user records"
-    );
+    throw new AppError("bad_request:database", "Failed to list user records");
   }
 }
 
@@ -256,10 +244,7 @@ export async function listRecordsForBook({
       .orderBy(desc(record.createdAt))
       .limit(limit);
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to list book records"
-    );
+    throw new AppError("bad_request:database", "Failed to list book records");
   }
 }
 
@@ -278,7 +263,7 @@ export async function getOwnRecord({
       .limit(1);
     return row ?? null;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to get record");
+    throw new AppError("bad_request:database", "Failed to get record");
   }
 }
 
@@ -298,7 +283,7 @@ export async function createRecord({
       .returning();
     return inserted;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to create record");
+    throw new AppError("bad_request:database", "Failed to create record");
   }
 }
 
@@ -319,7 +304,7 @@ export async function updateOwnRecord({
       .returning();
     return updated ?? null;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to update record");
+    throw new AppError("bad_request:database", "Failed to update record");
   }
 }
 
@@ -337,7 +322,7 @@ export async function deleteOwnRecord({
       .returning({ id: record.id });
     return deleted.length > 0;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to delete record");
+    throw new AppError("bad_request:database", "Failed to delete record");
   }
 }
 
@@ -350,10 +335,7 @@ export async function getBookByIsbn(isbn: string): Promise<Book | null> {
       .limit(1);
     return row ?? null;
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to get book by ISBN"
-    );
+    throw new AppError("bad_request:database", "Failed to get book by ISBN");
   }
 }
 
@@ -365,7 +347,7 @@ export async function listBooks({
   try {
     return await db.select().from(book).orderBy(asc(book.title)).limit(limit);
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to list books");
+    throw new AppError("bad_request:database", "Failed to list books");
   }
 }
 
@@ -420,7 +402,7 @@ export async function upsertBook({
       .returning();
     return { book: inserted, created: true };
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to upsert book");
+    throw new AppError("bad_request:database", "Failed to upsert book");
   }
 }
 
@@ -432,6 +414,6 @@ export async function deleteBookByIsbn(isbn: string): Promise<boolean> {
       .returning({ id: book.id });
     return deleted.length > 0;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to delete book");
+    throw new AppError("bad_request:database", "Failed to delete book");
   }
 }

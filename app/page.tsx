@@ -47,9 +47,9 @@ function Landing() {
           </Link>
           <Link
             className="flex w-full items-center justify-center rounded-[24px] border border-zinc-800 py-4 font-medium text-[15px] text-zinc-400 transition-all active:scale-[0.97]"
-            href="/board"
+            href="/records"
           >
-            게시판 둘러보기
+            기록 둘러보기
           </Link>
         </div>
       </div>

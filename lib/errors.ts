@@ -16,7 +16,7 @@ const visibilityBySurface: Record<Surface, "response" | "log"> = {
   database: "log",
 };
 
-export class ChatSDKError extends Error {
+export class AppError extends Error {
   type: ErrorType;
   surface: Surface;
   statusCode: number;

@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 // once a CI Postgres is wired up.
 
 test.describe("smoke", () => {
-  test("proxy /ping responds with pong", async ({ request }) => {
+  test("/ping route responds with pong", async ({ request }) => {
     const res = await request.get("/ping");
     expect(res.status()).toBe(200);
     expect(await res.text()).toBe("pong");
