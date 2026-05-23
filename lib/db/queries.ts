@@ -1,10 +1,18 @@
 import "server-only";
 
-import { and, asc, between, desc, eq } from "drizzle-orm";
+import { and, asc, between, desc, eq, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { ChatSDKError } from "../errors";
-import { type User, user, type Visit, visit } from "./schema";
+import {
+  type Post,
+  post,
+  type PostKind,
+  type User,
+  user,
+  type Visit,
+  visit,
+} from "./schema";
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
@@ -135,5 +143,89 @@ export async function getRecentVisitsByUser({
       "bad_request:database",
       "Failed to get recent visits"
     );
+  }
+}
+
+export type PostWithAuthor = Post & {
+  authorNickname: string | null;
+  authorProfileImage: string | null;
+};
+
+export async function listPosts({
+  limit = 30,
+  before,
+}: {
+  limit?: number;
+  before?: Date;
+}): Promise<PostWithAuthor[]> {
+  try {
+    const rows = await db
+      .select({
+        id: post.id,
+        userId: post.userId,
+        kind: post.kind,
+        content: post.content,
+        bookTitle: post.bookTitle,
+        createdAt: post.createdAt,
+        authorNickname: user.nickname,
+        authorProfileImage: user.profileImage,
+      })
+      .from(post)
+      .leftJoin(user, eq(post.userId, user.id))
+      .where(before ? lt(post.createdAt, before) : undefined)
+      .orderBy(desc(post.createdAt))
+      .limit(limit);
+
+    return rows.map((row) => ({
+      ...row,
+      kind: row.kind as PostKind,
+    }));
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to list posts");
+  }
+}
+
+export async function createPost({
+  userId,
+  kind,
+  content,
+  bookTitle,
+}: {
+  userId: string;
+  kind: PostKind;
+  content: string;
+  bookTitle?: string | null;
+}): Promise<Post> {
+  try {
+    const [inserted] = await db
+      .insert(post)
+      .values({
+        userId,
+        kind,
+        content,
+        bookTitle: bookTitle ?? null,
+      })
+      .returning();
+    return inserted;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to create post");
+  }
+}
+
+export async function deletePost({
+  postId,
+  userId,
+}: {
+  postId: string;
+  userId: string;
+}): Promise<boolean> {
+  try {
+    const deleted = await db
+      .delete(post)
+      .where(and(eq(post.id, postId), eq(post.userId, userId)))
+      .returning({ id: post.id });
+    return deleted.length > 0;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to delete post");
   }
 }

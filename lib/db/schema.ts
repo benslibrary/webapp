@@ -48,3 +48,25 @@ export const visit = pgTable(
 );
 
 export type Visit = InferSelectModel<typeof visit>;
+
+export const POST_KINDS = ["필사", "후기", "메모"] as const;
+export type PostKind = (typeof POST_KINDS)[number];
+
+export const post = pgTable(
+  "Post",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: varchar("kind", { length: 16, enum: POST_KINDS }).notNull(),
+    content: text("content").notNull(),
+    bookTitle: varchar("bookTitle", { length: 200 }),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    createdAtIdx: index("Post_createdAt_idx").on(table.createdAt),
+  })
+);
+
+export type Post = InferSelectModel<typeof post>;

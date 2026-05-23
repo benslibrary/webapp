@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { auth } from "@/app/(auth)/auth";
+import { BottomNav } from "@/components/bottom-nav";
 import { getVisitsForUserInRange } from "@/lib/db/queries";
 import { kstDateStamp, kstMonthBounds } from "@/lib/geo";
 import { CheckInButton } from "./check-in-button";
@@ -9,9 +10,12 @@ const KO_WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default function ArchivePage() {
   return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <ArchiveContent />
-    </Suspense>
+    <>
+      <Suspense fallback={<DashboardSkeleton />}>
+        <ArchiveContent />
+      </Suspense>
+      <BottomNav />
+    </>
   );
 }
 

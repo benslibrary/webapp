@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project context
 
-This repo is a fork of the Vercel Chat SDK template (Next.js + AI SDK) that has been extended with a Korean-language "벤의 서재" library/stamp-card flow. The chat application lives in the `(chat)` / `(auth)` route groups; the library flow lives at `/` (`app/page.tsx`) and `/archive` (`app/archive/page.tsx`). When making changes, keep in mind that these are two distinct product surfaces in the same Next.js app.
+This is **벤의 서재 (Ben's Library)** — a light Korean-language web app for in-store customers. The two product surfaces are:
+
+1. **출석체크** at `/archive` — logged-in users tap a check-in button; the browser supplies geolocation; the server records a visit when the coords are within `STORE_RADIUS_M` of the store. The dashboard renders the user's KST month calendar with green dots on visited days.
+2. **공용 포스트잇 게시판** at `/board` — anyone (including anonymous visitors) can read; only logged-in users can post. Three kinds: `필사 / 후기 / 메모`. Form lives at `/board/new`.
+
+Authentication is **Naver OAuth only** (`developers.naver.com`). There is no email/password and no chatbot — the repo was bootstrapped from the Vercel Chat SDK template, and that lineage explains some of the leftover infrastructure (Drizzle, NextAuth, proxy.ts, ultracite, the Korean library/archive scaffolds), but all AI-related code was removed in `refactor: remove chatbot domain code (PR 1/4)`.
+
+Production: https://benslibrary.com (Vercel, deployed from `main`).
 
 ## Common commands
 
@@ -14,71 +21,100 @@ Package manager is **pnpm 9.12.3** (see `packageManager` field). Do not use npm/
 | --- | --- |
 | Install deps | `pnpm install` |
 | Dev server (Turbopack) | `pnpm dev` |
-| Production build (runs migrations first) | `pnpm build` |
-| Production build w/o migrations | `pnpm build:vercel` |
+| Build (runs migrations first) | `pnpm build` |
+| Build w/o migrations | `pnpm build:vercel` |
 | Lint (Biome via Ultracite) | `pnpm lint` |
 | Auto-fix lint/format | `pnpm format` |
-| Run all Playwright e2e tests | `pnpm test` |
-| Run a single test file | `PLAYWRIGHT=True pnpm exec playwright test tests/e2e/chat.test.ts` |
-| Run a single test by name | `PLAYWRIGHT=True pnpm exec playwright test -g "test name"` |
+| Run Playwright tests | `pnpm test` (`tests/` is currently empty; add cases here) |
 | Drizzle: generate migration | `pnpm db:generate` |
 | Drizzle: apply migrations | `pnpm db:migrate` |
-| Drizzle: push schema directly | `pnpm db:push` |
+| Drizzle: push schema | `pnpm db:push` |
 | Drizzle Studio | `pnpm db:studio` |
 
-The `PLAYWRIGHT=True` env var matters: `lib/constants.ts` reads it to flip `isTestEnvironment`, which swaps the AI provider to mocks in `lib/ai/models.mock.ts`. Real model calls will not happen under Playwright. The Playwright config also auto-starts `pnpm dev` and waits on `/ping`.
+Build skip note: `pnpm build` runs `tsx lib/db/migrate.ts` first — it silently no-ops if `POSTGRES_URL` is unset, so the build still works locally without a DB.
 
 ## Architecture overview
 
-### Auth + routing (proxy.ts, not middleware.ts)
+### Routing + auth gates
 
-This project uses **`proxy.ts` at the repo root instead of the conventional `middleware.ts`**. It runs on every request matched by its `config.matcher`, gates protected routes behind a JWT check, and redirects unauthenticated visitors to `/api/auth/guest` (which mints a guest session). Public routes are `/`, `/archive`, `/ping`, `/api/auth/*`, and static asset paths. Authenticated non-guest users hitting `/login` or `/register` get redirected to `/archive`.
+- `/` — public landing (`app/page.tsx`). A standalone 4-step React state machine carried over from earlier iterations; not currently a load-bearing page in the new product. Anonymous-friendly. Logged-in users are NOT auto-redirected.
+- `/login` — Naver login. Static shell + Suspense'd client form (`app/(auth)/login/page.tsx` + `login-form.tsx`). Default `callbackUrl` is `/archive`.
+- `/archive` — attendance dashboard. Async server content inside Suspense; shows `LoginPrompt` for anonymous, otherwise nickname + stats + KST month calendar + `CheckInButton`.
+- `/board` — public read of posts (newest first). Authenticated users see a `+ 쓰기` button, anonymous users see a 로그인 link.
+- `/board/new` — write form (server action via `createPostAction` in `app/board/actions.ts`). Server redirects to `/login` if no session.
+- `/api/visits` — `POST` only. Validates session + geolocation. Returns 401/403/409/201.
+- `/api/auth/[...nextauth]` — NextAuth handler (re-exports from `app/(auth)/auth.ts`).
 
-Auth itself is **NextAuth v5 (beta)** with two Credentials providers in `app/(auth)/auth.ts`: a regular email/password provider (bcrypt-hashed via `bcrypt-ts`) and a `guest` provider that calls `createGuestUser()`. User type (`"guest" | "regular"`) is propagated through the JWT and Session via module augmentation in the same file. `AUTH_SECRET_OR_DEV_FALLBACK` in `lib/constants.ts` provides a dev-only fallback secret — production must set `AUTH_SECRET`.
+**`proxy.ts` is the middleware** — Next is configured to call it instead of `middleware.ts`. After PR 2 it's stripped to a `/ping` passthrough; all auth gating happens at the route/action level (in server components via `auth()`, or in route handlers via the same).
+
+### Auth (NextAuth v5 + Naver OAuth)
+
+`app/(auth)/auth.ts` registers Naver as a custom OAuth provider against `nid.naver.com/oauth2.0/{authorize,token}` and `openapi.naver.com/v1/nid/me`. Naver's userinfo response is wrapped in `{ resultcode, message, response: {...} }`, so the `profile()` callback unwraps `profile.response`.
+
+Flow on first login:
+1. `signIn` callback receives the Naver profile and calls `upsertUserFromNaver()` to insert or update the row in our `User` table.
+2. It then rewrites `user.id` to the **internal uuid** before the jwt callback fires — so `token.id` and `session.user.id` are our DB id, not the Naver id (which lives in `token.naverId`).
+3. `nickname` and `profileImage` are also carried through token → session.
+
+`AUTH_SECRET` is required in production. Dev falls back to a literal string in `lib/constants.ts` (`AUTH_SECRET_OR_DEV_FALLBACK`).
 
 ### Database (Drizzle + Postgres)
 
-Schema is in `lib/db/schema.ts`. Note the **two parallel sets of tables**:
+Schema (`lib/db/schema.ts`) has three tables:
 
-- `Message` / `Vote` are **deprecated** — kept for backward compatibility only.
-- `Message_v2` / `Vote_v2` are current. New code must use these.
+- `User` — `id`, `naverId` (unique), `email`, `nickname`, `profileImage`, `createdAt`, `updatedAt`.
+- `Visit` — `id`, `userId` (cascade fk), `visitedAt`, `lat`, `lng`. Indexed on `(userId, visitedAt)`.
+- `Post` — `id`, `userId` (cascade fk), `kind` enum (`필사 / 후기 / 메모`), `content`, `bookTitle?`, `createdAt`.
 
-See https://chat-sdk.dev/docs/migration-guides/message-parts. Queries live in `lib/db/queries.ts`. Migrations are SQL files in `lib/db/migrations/` generated by `drizzle-kit`. `lib/db/migrate.ts` runs them and is invoked by `pnpm build` automatically.
+Migrations `0000_*` through `0008_*` are leftovers from the Chat SDK era. The corresponding tables (Chat, Message*, Vote*, Document, Suggestion, Stream) **still exist in the live DB** — they were dropped from `schema.ts` but a destructive drop migration was deliberately deferred. New migrations start at `0009_naver_user.sql` (User column changes), `0010_visit.sql`, `0011_post.sql`. The journal at `lib/db/migrations/meta/_journal.json` is hand-maintained for 0009-0011 since they were authored without a live DB connection.
 
-### AI model routing
+### Geolocation + KST time
 
-All model calls go through the **Vercel AI Gateway** (`@ai-sdk/gateway`) — there are no direct provider SDK imports. The selection logic is in `lib/ai/providers.ts`:
+`lib/geo.ts` is the source of truth for two things:
 
-- Models with `-thinking` suffix or `reasoning` in the id are wrapped with `extractReasoningMiddleware({ tagName: "thinking" })` and the suffix is stripped before being passed to the gateway.
-- Under `isTestEnvironment`, **all** model lookups are short-circuited to the mocks in `lib/ai/models.mock.ts` via a `customProvider`.
-- Fixed roles are: `getTitleModel()` → `google/gemini-2.5-flash-lite`, `getArtifactModel()` → `anthropic/claude-haiku-4.5`. Chat model is user-selectable from `lib/ai/models.ts`.
+- `haversineMeters(a, b)` — distance check used by `POST /api/visits`. Compared against `STORE_RADIUS_M`.
+- KST helpers (`kstDateStamp`, `kstDayBounds`, `kstMonthBounds`) — **all "today" / "this month" logic runs in Asia/Seoul** regardless of what timezone the serverless function runs in. The check-in endpoint uses `kstDayBounds()` to enforce one visit per KST calendar day.
 
-Per-user-type usage limits live in `lib/ai/entitlements.ts` (guests: 20 msg/day, regular: 50). Update this file when adding new user tiers.
+`STORE_LAT`, `STORE_LNG`, `STORE_RADIUS_M` live in `lib/constants.ts` and are env-overridable. The defaults are placeholder Seoul coords (Gyeongbokgung-ish) — **operator must set the real values in Vercel env** before attendance is meaningful.
 
-### Artifacts system
+### Next 16 cacheComponents
 
-"Artifacts" are streamed documents the AI can create/update (text, code, sheet, image). The pattern:
+`next.config.ts` sets `cacheComponents: true`. This is the new Next 16 mode that requires uncached data (async server components, `useSearchParams`, `useSession`, `next-themes` etc.) to live inside `<Suspense>` boundaries. The pattern used throughout this codebase:
 
-- Server handlers live in `artifacts/<kind>/server.ts` and are registered in `lib/artifacts/server.ts` (`documentHandlersByArtifactKind`).
-- Each handler is built with `createDocumentHandler({ kind, onCreateDocument, onUpdateDocument })`. The framework auto-persists the returned `draftContent` via `saveDocument()` after both callbacks.
-- Client renderers live in `artifacts/<kind>/client.tsx`.
-- The tools the model uses to invoke artifacts (`create-document`, `update-document`, `request-suggestions`) are in `lib/ai/tools/`.
+```tsx
+export default function Page() {
+  return (
+    <Suspense fallback={<Skeleton />}>
+      <PageContent />
+    </Suspense>
+  );
+}
 
-**Important asymmetry**: `artifactKinds` is `["text", "code", "sheet"]` — image is excluded from server-side document handling even though the schema enum includes `"image"` and a client renderer exists. Don't add `image` to `documentHandlersByArtifactKind` without understanding why it was left out.
+async function PageContent() {
+  const session = await auth();
+  // ...
+}
+```
 
-### Components: `elements` vs `ai-elements`
+You **cannot** use `export const dynamic = "force-dynamic"` — it errors out with cacheComponents. Wrap in Suspense instead. The `/login` page does the same thing for `useSearchParams`/`useSession` by splitting into a static page shell + a `LoginForm` client component inside Suspense.
 
-There are two parallel directories: `components/elements/` and `components/ai-elements/`. These are not duplicates — they are different generations of the same primitives (e.g. both have `conversation.tsx`, `message.tsx`, `prompt-input.tsx`). Check imports to determine which the current chat surface uses before editing either.
+### Components
 
-`components/ui/` is shadcn/ui primitives and is **excluded from Biome** (`biome.jsonc`) — don't reformat files there.
-
-### Library flow (`/` and `/archive`)
-
-`app/page.tsx` is an unauthenticated client-side step machine (Opening → Onboarding → StampCard → Dashboard) composed from `components/library/*`. `app/archive/page.tsx` is a similar inline step machine that does not yet decompose into components. Both render in a fixed `max-w-[430px]` mobile frame. Korean copy is intentional — preserve it unless explicitly asked to change.
+- `components/ui/` — shadcn/ui primitives. **Excluded from Biome** (see `biome.jsonc`). Don't reformat. Most use the combined `radix-ui` meta-package; a few older ones still import `@radix-ui/react-dialog` / `@radix-ui/react-slot` directly.
+- `components/bottom-nav.tsx` — shared bottom nav used by `/archive` and `/board`. Highlights the active tab via `usePathname`.
+- `components/library/`, `components/archive/` — legacy library/stamp-card UI components carried over from earlier iterations. `app/page.tsx` and the archive layout still consume some of these. Treat them as design references rather than load-bearing code.
 
 ## Tooling notes
 
-- **Lint/format is Biome via Ultracite** (`pnpm lint` runs `ultracite check`). Several rules are disabled in `biome.jsonc` (e.g. `noExplicitAny`, `noConsole`, `noMagicNumbers`). Don't try to "fix" code that triggers only-disabled rules.
-- **React 19 + Next 16** with `cacheComponents: true` in `next.config.ts`. This affects RSC caching semantics — server components are cached by default.
-- **OpenTelemetry** is wired in `instrumentation.ts` via `@vercel/otel` (service name `ai-chatbot`).
-- `app/(chat)/` route group exists but currently contains only `actions.ts` and OG images. The chat UI is composed from top-level `components/*` mounted somewhere outside this group — check imports if you're hunting the chat page.
+- **Lint via Ultracite/Biome** is pinned: `@biomejs/biome` 2.3.11 + `ultracite` 7.0.11. Newer versions of ultracite ship config keys that biome 2.3.11 doesn't recognize — don't auto-upgrade either of these without testing the other. There are pre-existing lint errors in `components/library/*` and `components/archive/*` that predate the refactor; they're out of scope for the current product work.
+- **Tailwind CSS v4** with `@tailwindcss/postcss`. `app/globals.css` is the entry point.
+- **OpenTelemetry** wired in `instrumentation.ts` via `@vercel/otel` (service name `ai-chatbot`, which is a stale name — fine to rename to `bens-library`).
+
+## Required env vars
+
+See `.env.example`. In Vercel production all four are required:
+
+- `AUTH_SECRET` — generate with `openssl rand -base64 32`
+- `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` — register an app at `developers.naver.com/apps` and add `https://<domain>/api/auth/callback/naver` as the callback URL
+- `POSTGRES_URL` — Neon via the Vercel integration
+- Optional: `STORE_LAT`, `STORE_LNG`, `STORE_RADIUS_M` — defaults are placeholder Seoul coords
