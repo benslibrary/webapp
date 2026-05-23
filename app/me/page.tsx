@@ -134,26 +134,24 @@ async function MeContent() {
                 <div key={d}>{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-y-5 text-center">
+            <div className="grid grid-cols-7 gap-y-3 text-center">
               {calendarCells.map((day, i) => (
                 <div
-                  className="relative flex flex-col items-center justify-center"
+                  className="relative flex aspect-square items-center justify-center"
                   key={day === null ? `pad-${i}` : `day-${day}`}
                 >
                   {day === null ? null : (
                     <>
+                      {visitedDays.has(day) && <VisitStamp day={day} />}
                       <span
                         className={
                           day === todayDay
-                            ? "font-bold text-[14px] text-white"
-                            : "font-semibold text-[14px] text-zinc-400"
+                            ? "relative z-10 font-bold text-[14px] text-white"
+                            : "relative z-10 font-semibold text-[14px] text-zinc-400"
                         }
                       >
                         {day}
                       </span>
-                      {visitedDays.has(day) && (
-                        <div className="-bottom-1.5 absolute h-1 w-1 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
-                      )}
                     </>
                   )}
                 </div>
@@ -180,6 +178,27 @@ async function MeContent() {
         </section>
       </div>
     </main>
+  );
+}
+
+function VisitStamp({ day }: { day: number }) {
+  // Deterministic per-day rotation so each "stamp" looks slightly
+  // hand-pressed but stable across re-renders.
+  const rotation = (((day * 13) % 13) - 6).toString();
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 m-auto flex h-10 w-10 items-center justify-center rounded-full border-2 border-amber-400/70 bg-amber-500/10"
+      style={{ transform: `rotate(${rotation}deg)` }}
+    >
+      <Image
+        alt=""
+        className="opacity-70"
+        height={28}
+        src="/logo.png"
+        width={28}
+      />
+    </div>
   );
 }
 
