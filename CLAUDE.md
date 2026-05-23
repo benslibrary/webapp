@@ -66,7 +66,7 @@ Schema (`lib/db/schema.ts`) has three tables:
 - `Visit` — `id`, `userId` (cascade fk), `visitedAt`, `lat`, `lng`. Indexed on `(userId, visitedAt)`.
 - `Post` — `id`, `userId` (cascade fk), `kind` enum (`필사 / 후기 / 메모`), `content`, `bookTitle?`, `createdAt`.
 
-Migrations `0000_*` through `0008_*` are leftovers from the Chat SDK era. The corresponding tables (Chat, Message*, Vote*, Document, Suggestion, Stream) **still exist in the live DB** — they were dropped from `schema.ts` but a destructive drop migration was deliberately deferred. New migrations start at `0009_naver_user.sql` (User column changes), `0010_visit.sql`, `0011_post.sql`. The journal at `lib/db/migrations/meta/_journal.json` is hand-maintained for 0009-0011 since they were authored without a live DB connection.
+Migrations `0000_*` through `0008_*` are leftovers from the Chat SDK era and create the now-defunct tables (Chat, Message*, Vote*, Document, Suggestion, Stream). `0012_drop_legacy_chat_tables.sql` drops all of them with `CASCADE`. New migrations from `0009_naver_user.sql` onward are hand-written because they were authored without a live DB connection; the journal at `lib/db/migrations/meta/_journal.json` is hand-maintained to match.
 
 ### Geolocation + KST time
 
