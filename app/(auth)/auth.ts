@@ -1,34 +1,47 @@
-import { compare } from "bcrypt-ts";
 import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
-import Credentials from "next-auth/providers/credentials";
-import { AUTH_SECRET_OR_DEV_FALLBACK, DUMMY_PASSWORD } from "@/lib/constants";
-import { createGuestUser, getUser } from "@/lib/db/queries";
+import { AUTH_SECRET_OR_DEV_FALLBACK } from "@/lib/constants";
+import { upsertUserFromNaver } from "@/lib/db/queries";
 import { authConfig } from "./auth.config";
-
-export type UserType = "guest" | "regular";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
-      type: UserType;
+      naverId?: string | null;
+      nickname?: string | null;
+      profileImage?: string | null;
     } & DefaultSession["user"];
   }
 
   interface User {
     id?: string;
-    email?: string | null;
-    type: UserType;
+    naverId?: string | null;
+    nickname?: string | null;
+    profileImage?: string | null;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
-    type: UserType;
+    naverId?: string | null;
+    nickname?: string | null;
+    profileImage?: string | null;
   }
 }
+
+type NaverApiProfile = {
+  resultcode: string;
+  message: string;
+  response: {
+    id: string;
+    nickname?: string;
+    name?: string;
+    email?: string;
+    profile_image?: string;
+  };
+};
 
 export const {
   handlers: { GET, POST },
@@ -38,57 +51,66 @@ export const {
 } = NextAuth({
   ...authConfig,
   secret: AUTH_SECRET_OR_DEV_FALLBACK,
+  session: { strategy: "jwt" },
   providers: [
-    Credentials({
-      credentials: {},
-      async authorize({ email, password }: any) {
-        const users = await getUser(email);
-
-        if (users.length === 0) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        const [user] = users;
-
-        if (!user.password) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        const passwordsMatch = await compare(password, user.password);
-
-        if (!passwordsMatch) {
-          return null;
-        }
-
-        return { ...user, type: "regular" };
+    {
+      id: "naver",
+      name: "Naver",
+      type: "oauth",
+      authorization: {
+        url: "https://nid.naver.com/oauth2.0/authorize",
+        params: { response_type: "code" },
       },
-    }),
-    Credentials({
-      id: "guest",
-      credentials: {},
-      async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
+      token: "https://nid.naver.com/oauth2.0/token",
+      userinfo: "https://openapi.naver.com/v1/nid/me",
+      clientId: process.env.NAVER_CLIENT_ID,
+      clientSecret: process.env.NAVER_CLIENT_SECRET,
+      profile(profile: NaverApiProfile) {
+        const r = profile.response;
+        return {
+          id: r.id,
+          name: r.nickname ?? r.name ?? null,
+          email: r.email ?? null,
+          image: r.profile_image ?? null,
+          naverId: r.id,
+          nickname: r.nickname ?? r.name ?? null,
+          profileImage: r.profile_image ?? null,
+        };
       },
-    }),
+    },
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "naver" || !user.naverId) {
+        return false;
+      }
+
+      const dbUser = await upsertUserFromNaver({
+        naverId: user.naverId,
+        email: user.email ?? null,
+        nickname: user.nickname ?? null,
+        profileImage: user.profileImage ?? null,
+      });
+
+      user.id = dbUser.id;
+      return true;
+    },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
-        token.type = user.type;
+        token.naverId = user.naverId;
+        token.nickname = user.nickname;
+        token.profileImage = user.profileImage;
       }
-
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
-        session.user.type = token.type;
+        session.user.naverId = token.naverId;
+        session.user.nickname = token.nickname;
+        session.user.profileImage = token.profileImage;
       }
-
       return session;
     },
   },
