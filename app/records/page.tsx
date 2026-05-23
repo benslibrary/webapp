@@ -51,30 +51,27 @@ async function Content() {
             <br />첫 독서 감상을 남겨보세요.
           </p>
         ) : (
-          <ul className="mt-8 flex flex-col gap-4 px-5">
+          <ul className="mt-8 flex flex-col gap-3 px-5">
             {records.map((r) => (
-              <li
-                className="flex flex-col gap-3 rounded-[16px] border border-zinc-900 bg-[#121212] p-5"
-                key={r.id}
-              >
+              <li key={r.id}>
                 <Link
-                  className="flex items-start gap-3"
+                  className="flex gap-3 rounded-[16px] border border-zinc-900 bg-[#121212] p-4 transition-all active:scale-[0.99]"
                   href={`/books/${r.bookIsbn}`}
                 >
                   {r.bookCoverImageUrl ? (
                     <Image
                       alt={r.bookTitle}
                       className="rounded object-cover"
-                      height={56}
+                      height={84}
                       src={r.bookCoverImageUrl}
-                      width={40}
+                      width={60}
                     />
                   ) : (
-                    <div className="flex h-[56px] w-[40px] items-center justify-center rounded bg-zinc-900 text-[9px] text-zinc-600">
+                    <div className="flex h-[84px] w-[60px] shrink-0 items-center justify-center rounded bg-zinc-900 text-[10px] text-zinc-600">
                       no cover
                     </div>
                   )}
-                  <div className="flex flex-1 flex-col">
+                  <div className="flex min-w-0 flex-1 flex-col">
                     <span className="font-bold text-[14px] text-white leading-snug">
                       {r.bookTitle}
                     </span>
@@ -83,15 +80,15 @@ async function Content() {
                         {r.bookAuthor}
                       </span>
                     )}
+                    <p className="mt-2 line-clamp-2 whitespace-pre-wrap text-[13px] text-zinc-300 leading-relaxed">
+                      {r.content}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-600">
+                      <span>— {r.authorNickname || "익명"}</span>
+                      <span>{formatDate(r.createdAt)}</span>
+                    </div>
                   </div>
                 </Link>
-                <p className="whitespace-pre-wrap break-words text-[14px] text-zinc-200 leading-relaxed">
-                  {r.content}
-                </p>
-                <div className="flex items-center justify-between border-zinc-900 border-t pt-3 text-[11px] text-zinc-500">
-                  <span>— {r.authorNickname || "익명"}</span>
-                  <span>{formatDate(r.createdAt)}</span>
-                </div>
               </li>
             ))}
           </ul>
@@ -113,10 +110,10 @@ function Skeleton() {
           <div className="h-8 w-24 animate-pulse rounded bg-zinc-900" />
           <div className="h-10 w-10 animate-pulse rounded-full bg-zinc-900" />
         </div>
-        <div className="mt-8 flex flex-col gap-4">
+        <div className="mt-8 flex flex-col gap-3">
           {Array.from({ length: 3 }, (_, i) => i).map((i) => (
             <div
-              className="h-40 animate-pulse rounded-[16px] bg-zinc-900"
+              className="h-32 animate-pulse rounded-[16px] bg-zinc-900"
               key={i}
             />
           ))}

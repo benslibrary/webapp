@@ -33,7 +33,22 @@ async function MeContent() {
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
       <div className="relative flex w-full max-w-[430px] flex-col px-7 pt-12 pb-32">
-        <h1 className="font-bold text-[26px] text-white">내 정보</h1>
+        <header className="flex items-center justify-between">
+          <h1 className="font-bold text-[26px] text-white">내 정보</h1>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }}
+          >
+            <button
+              className="text-[13px] text-zinc-500 underline-offset-2 hover:underline"
+              type="submit"
+            >
+              로그아웃
+            </button>
+          </form>
+        </header>
 
         <section className="mt-8 flex items-center gap-4 rounded-[24px] border border-zinc-900 bg-[#121212] p-6">
           {profileImage ? (
@@ -76,28 +91,13 @@ async function MeContent() {
               아직 작성한 기록이 없어요.
             </p>
           ) : (
-            <ul className="mt-4 flex flex-col gap-3">
+            <ul className="mt-4 flex flex-col gap-2">
               {myRecords.map((r) => (
                 <MyRecordItem key={r.id} record={r} />
               ))}
             </ul>
           )}
         </section>
-
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-          className="mt-10"
-        >
-          <button
-            className="w-full rounded-[24px] border border-zinc-800 py-4 font-medium text-[15px] text-zinc-400 transition-all active:scale-[0.97]"
-            type="submit"
-          >
-            로그아웃
-          </button>
-        </form>
       </div>
     </main>
   );

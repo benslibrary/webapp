@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { auth } from "@/app/(auth)/auth";
 import { BottomNav } from "@/components/bottom-nav";
-import { getBookByIsbn } from "@/lib/db/queries";
+import { getBookByIsbn, listRecordsForBook } from "@/lib/db/queries";
+import { kstDateStamp } from "@/lib/geo";
 import { normalizeIsbn } from "@/lib/nat-lib";
 
 export default function BookDetailPage({
@@ -35,7 +37,15 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
     notFound();
   }
 
+  const [session, records] = await Promise.all([
+    auth(),
+    listRecordsForBook({ bookId: book.id }),
+  ]);
+
   const formattedDate = formatPublishDate(book.publishDate);
+  const writeHref = session?.user
+    ? `/records/new?bookId=${book.id}`
+    : `/login?callbackUrl=${encodeURIComponent(`/records/new?bookId=${book.id}`)}`;
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
@@ -99,10 +109,43 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
         </section>
 
         <section className="mt-10">
-          <h2 className="font-bold text-[18px] text-zinc-200">독자 후기</h2>
-          <p className="mt-4 rounded-[16px] border border-dashed border-zinc-800 bg-zinc-950 p-6 text-center text-[13px] text-zinc-500">
-            리뷰 기능은 곧 추가됩니다.
-          </p>
+          <div className="flex items-center justify-between px-1">
+            <h2 className="font-bold text-[18px] text-zinc-200">
+              기록 ({records.length})
+            </h2>
+            <Link
+              className="rounded-full bg-white px-4 py-1.5 font-bold text-[12px] text-black transition-all active:scale-95"
+              href={writeHref}
+            >
+              + 기록 남기기
+            </Link>
+          </div>
+
+          {records.length === 0 ? (
+            <p className="mt-6 rounded-[16px] border border-dashed border-zinc-800 bg-zinc-950 p-6 text-center text-[13px] text-zinc-500">
+              아직 이 책에 대한 기록이 없어요.
+              <br />첫 기록을 남겨보세요.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-3">
+              {records.map((r) => (
+                <li
+                  className="rounded-[14px] border border-zinc-900 bg-[#121212] p-4"
+                  key={r.id}
+                >
+                  <p className="whitespace-pre-wrap text-[13px] text-zinc-200 leading-relaxed">
+                    {r.content}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between border-zinc-900 border-t pt-3 text-[11px] text-zinc-600">
+                    <span>— {r.authorNickname || "익명"}</span>
+                    <span>
+                      {kstDateStamp(r.createdAt).replaceAll("-", ".")}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </main>
