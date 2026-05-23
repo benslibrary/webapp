@@ -2,12 +2,14 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import { AUTH_SECRET_OR_DEV_FALLBACK } from "@/lib/constants";
 import { upsertUserFromNaver } from "@/lib/db/queries";
+import type { UserRole } from "@/lib/db/schema";
 import { authConfig } from "./auth.config";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role: UserRole;
       naverId?: string | null;
       nickname?: string | null;
       profileImage?: string | null;
@@ -16,6 +18,7 @@ declare module "next-auth" {
 
   interface User {
     id?: string;
+    role?: UserRole;
     naverId?: string | null;
     nickname?: string | null;
     profileImage?: string | null;
@@ -25,6 +28,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
+    role: UserRole;
     naverId?: string | null;
     nickname?: string | null;
     profileImage?: string | null;
@@ -93,11 +97,13 @@ export const {
       });
 
       user.id = dbUser.id;
+      user.role = dbUser.role;
       return true;
     },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
+        token.role = user.role ?? "customer";
         token.naverId = user.naverId;
         token.nickname = user.nickname;
         token.profileImage = user.profileImage;
@@ -107,6 +113,7 @@ export const {
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.role = token.role;
         session.user.naverId = token.naverId;
         session.user.nickname = token.nickname;
         session.user.profileImage = token.profileImage;

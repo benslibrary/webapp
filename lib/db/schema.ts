@@ -10,6 +10,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
+export const USER_ROLES = ["customer", "admin"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
 export const user = pgTable(
   "User",
   {
@@ -18,6 +21,9 @@ export const user = pgTable(
     email: varchar("email", { length: 128 }),
     nickname: varchar("nickname", { length: 64 }),
     profileImage: text("profileImage"),
+    role: varchar("role", { length: 16, enum: USER_ROLES })
+      .notNull()
+      .default("customer"),
     createdAt: timestamp("createdAt").notNull().defaultNow(),
     updatedAt: timestamp("updatedAt").notNull().defaultNow(),
   },
