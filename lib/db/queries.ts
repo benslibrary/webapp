@@ -1,7 +1,7 @@
 import "server-only";
 
 import { neon } from "@neondatabase/serverless";
-import { and, asc, between, count, desc, eq, lt } from "drizzle-orm";
+import { and, asc, between, desc, eq, lt, sql as sqlOp } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { AppError } from "../errors";
 import { getPostgresUrl } from "./connection";
@@ -188,15 +188,27 @@ export async function getUserStats({
   userId: string;
 }): Promise<{ visitCount: number; recordCount: number }> {
   try {
-    const [{ visitCount }] = await db
-      .select({ visitCount: count() })
-      .from(visit)
-      .where(eq(visit.userId, userId));
-    const [{ recordCount }] = await db
-      .select({ recordCount: count() })
-      .from(record)
-      .where(eq(record.userId, userId));
-    return { visitCount, recordCount };
+    // Single round-trip: two correlated subqueries against a 1-row anchor
+    // beats two separate HTTP fetches under neon-http (each = ~RTT to
+    // Singapore).
+    const rows = await db.execute(sqlOp<{
+      visit_count: number;
+      record_count: number;
+    }>`
+      SELECT
+        (SELECT COUNT(*)::int FROM "Visit"  WHERE "userId" = ${userId}) AS visit_count,
+        (SELECT COUNT(*)::int FROM "Record" WHERE "userId" = ${userId}) AS record_count
+    `);
+    const row = (
+      rows as unknown as Array<{
+        visit_count: number;
+        record_count: number;
+      }>
+    )[0];
+    return {
+      visitCount: Number(row?.visit_count ?? 0),
+      recordCount: Number(row?.record_count ?? 0),
+    };
   } catch (_error) {
     throw new AppError("bad_request:database", "Failed to get user stats");
   }
