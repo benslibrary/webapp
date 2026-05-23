@@ -3,8 +3,7 @@ import { ArchiveFontLoader } from "@/components/archive/font-loader";
 import "./archive.css";
 
 export const metadata: Metadata = {
-  title: "Ben's Archive 4.0",
-  description: "벤의서재",
+  title: "출석",
 };
 
 export const viewport: Viewport = {

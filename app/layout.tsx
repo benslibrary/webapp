@@ -8,8 +8,11 @@ import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://benslibrary.com"),
-  title: "Ben's Archive",
-  description: "벤의서재",
+  title: {
+    default: "벤의 서재",
+    template: "%s · 벤의 서재",
+  },
+  description: "벤의 서재 — 출석체크와 독서 기록을 남길 수 있는 작은 북카페 앱",
 };
 
 export const viewport = {
