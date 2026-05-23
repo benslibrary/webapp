@@ -20,6 +20,7 @@ export const user = pgTable(
     naverId: varchar("naverId", { length: 64 }),
     email: varchar("email", { length: 128 }),
     nickname: varchar("nickname", { length: 64 }),
+    name: varchar("name", { length: 64 }),
     profileImage: text("profileImage"),
     role: varchar("role", { length: 16, enum: USER_ROLES })
       .notNull()

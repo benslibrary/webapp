@@ -38,6 +38,7 @@ type NaverProfile = {
   naverId: string;
   email: string | null;
   nickname: string | null;
+  name: string | null;
   profileImage: string | null;
 };
 
@@ -53,6 +54,7 @@ export async function upsertUserFromNaver(
         .set({
           email: profile.email,
           nickname: profile.nickname,
+          name: profile.name,
           profileImage: profile.profileImage,
           updatedAt: new Date(),
         })
@@ -67,6 +69,7 @@ export async function upsertUserFromNaver(
         naverId: profile.naverId,
         email: profile.email,
         nickname: profile.nickname,
+        name: profile.name,
         profileImage: profile.profileImage,
       })
       .returning();
