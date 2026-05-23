@@ -68,6 +68,7 @@ export const book = pgTable(
     coverImageUrl: text("coverImageUrl"),
     description: text("description"),
     kdc: varchar("kdc", { length: 16 }),
+    ownerComment: text("ownerComment"),
     addedByUserId: uuid("addedByUserId").references(() => user.id, {
       onDelete: "set null",
     }),

@@ -537,6 +537,36 @@ export async function upsertBook({
   }
 }
 
+export type BookEditableFields = {
+  title?: string;
+  author?: string | null;
+  publisher?: string | null;
+  publishDate?: string | null;
+  coverImageUrl?: string | null;
+  description?: string | null;
+  kdc?: string | null;
+  ownerComment?: string | null;
+};
+
+export async function updateBookFields({
+  isbn,
+  fields,
+}: {
+  isbn: string;
+  fields: BookEditableFields;
+}): Promise<Book | null> {
+  try {
+    const [updated] = await db
+      .update(book)
+      .set(fields)
+      .where(eq(book.isbn, isbn))
+      .returning();
+    return updated ?? null;
+  } catch (_error) {
+    throw new AppError("bad_request:database", "Failed to update book");
+  }
+}
+
 export async function deleteBookByIsbn(isbn: string): Promise<boolean> {
   try {
     const deleted = await db

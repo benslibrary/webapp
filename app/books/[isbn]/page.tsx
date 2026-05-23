@@ -93,6 +93,17 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
           </div>
         </header>
 
+        {book.ownerComment && (
+          <section className="mt-8 rounded-[16px] border border-amber-500/30 bg-amber-500/5 p-5">
+            <span className="font-bold text-[11px] uppercase tracking-[0.2em] text-amber-300">
+              책방지기
+            </span>
+            <p className="mt-2 whitespace-pre-wrap text-[14px] text-amber-100 leading-relaxed">
+              {book.ownerComment}
+            </p>
+          </section>
+        )}
+
         <section className="mt-8 flex flex-col gap-3 rounded-[16px] border border-zinc-900 bg-[#121212] p-5 text-[13px]">
           <Row label="ISBN" mono value={book.isbn} />
           <Divider />

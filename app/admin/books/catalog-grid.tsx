@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { Book } from "@/lib/db/schema";
@@ -94,21 +95,27 @@ export function CatalogGrid({ books }: { books: Book[] }) {
                 className="group relative flex flex-col gap-2 rounded-[10px] border border-zinc-900 bg-[#121212] p-2.5 transition-all hover:border-zinc-700"
                 key={b.id}
               >
-                {b.coverImageUrl ? (
-                  <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-zinc-900">
-                    <Image
-                      alt={b.title}
-                      className="object-cover"
-                      fill
-                      sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
-                      src={b.coverImageUrl}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-[2/3] w-full items-center justify-center rounded-md bg-zinc-900 text-[10px] text-zinc-600">
-                    no cover
-                  </div>
-                )}
+                <Link
+                  className="block"
+                  href={`/admin/books/${b.isbn}/edit`}
+                  title={b.coverImageUrl ? "편집" : "표지 추가"}
+                >
+                  {b.coverImageUrl ? (
+                    <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-zinc-900">
+                      <Image
+                        alt={b.title}
+                        className="object-cover"
+                        fill
+                        sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+                        src={b.coverImageUrl}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[2/3] w-full items-center justify-center rounded-md border border-zinc-800 border-dashed bg-zinc-900 text-[10px] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200">
+                      + 표지 추가
+                    </div>
+                  )}
+                </Link>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span
                     className="truncate font-bold text-[12px] text-white leading-snug"
@@ -128,22 +135,26 @@ export function CatalogGrid({ books }: { books: Book[] }) {
                     {b.isbn}
                   </span>
                 </div>
-                <button
-                  className={
-                    confirming
-                      ? "mt-auto rounded-md bg-red-500/15 px-2 py-1 font-bold text-[11px] text-red-400 transition-all active:scale-95 disabled:opacity-50"
-                      : "mt-auto rounded-md border border-zinc-800 px-2 py-1 font-medium text-[11px] text-zinc-400 transition-all hover:border-red-500/40 hover:text-red-400 active:scale-95 disabled:opacity-50"
-                  }
-                  disabled={deleting}
-                  onClick={() => handleDelete(b)}
-                  type="button"
-                >
-                  {deleting
-                    ? "삭제 중…"
-                    : confirming
-                      ? "정말 삭제할까요?"
-                      : "삭제"}
-                </button>
+                <div className="mt-auto flex gap-1.5">
+                  <Link
+                    className="flex-1 rounded-md border border-zinc-800 px-2 py-1 text-center font-medium text-[11px] text-zinc-300 transition-all hover:border-zinc-600 hover:text-white active:scale-95"
+                    href={`/admin/books/${b.isbn}/edit`}
+                  >
+                    편집
+                  </Link>
+                  <button
+                    className={
+                      confirming
+                        ? "flex-1 rounded-md bg-red-500/15 px-2 py-1 font-bold text-[11px] text-red-400 transition-all active:scale-95 disabled:opacity-50"
+                        : "flex-1 rounded-md border border-zinc-800 px-2 py-1 font-medium text-[11px] text-zinc-400 transition-all hover:border-red-500/40 hover:text-red-400 active:scale-95 disabled:opacity-50"
+                    }
+                    disabled={deleting}
+                    onClick={() => handleDelete(b)}
+                    type="button"
+                  >
+                    {deleting ? "삭제 중…" : confirming ? "정말?" : "삭제"}
+                  </button>
+                </div>
               </li>
             );
           })}
