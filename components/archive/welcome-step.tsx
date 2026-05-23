@@ -2,7 +2,7 @@
 
 export function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
-    <section className="archive-step active" aria-label="환영">
+    <section aria-label="환영" className="archive-step active">
       <h1 className="archive-fade-up archive-delay-1">
         안녕하세요!
         <br />
@@ -14,11 +14,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
         발견해볼까요?
       </p>
       <div className="archive-fade-up archive-delay-3 w-full">
-        <button
-          type="button"
-          className="archive-btn-main"
-          onClick={onNext}
-        >
+        <button className="archive-btn-main" onClick={onNext} type="button">
           시작하기
         </button>
       </div>

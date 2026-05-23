@@ -50,16 +50,10 @@ export function HomeStep({
   const year = now.getFullYear();
   const month = now.getMonth();
   const monthLabel = `${year}년 ${String(month + 1).padStart(2, "0")}월`;
-  const { days } = useMemo(
-    () => getCalendarDays(year, month),
-    [year, month]
-  );
+  const { days } = useMemo(() => getCalendarDays(year, month), [year, month]);
 
   return (
-    <section
-      className="archive-step archive-step-home active"
-      aria-label="홈"
-    >
+    <section aria-label="홈" className="archive-step archive-step-home active">
       <div className="flex items-center justify-between mb-3">
         <div
           className="text-[11px] font-extrabold tracking-wider"
@@ -69,15 +63,15 @@ export function HomeStep({
         </div>
         <div className="flex gap-3 text-sm">
           <Link
-            href="/login"
             className="font-medium underline"
+            href="/login"
             style={{ color: "var(--archive-gray-sub)" }}
           >
             로그인
           </Link>
           <Link
-            href="/register"
             className="font-medium underline"
+            href="/register"
             style={{ color: "var(--archive-gray-sub)" }}
           >
             회원가입
@@ -104,14 +98,11 @@ export function HomeStep({
       )}
 
       <div
-        id="archive-stats-area"
         className={`archive-stats-grid ${statsLocked ? "archive-locked" : ""}`}
+        id="archive-stats-area"
       >
         <div className="border-r border-[#222]">
-          <div
-            id="archive-v-count-display"
-            className="archive-stat-val"
-          >
+          <div className="archive-stat-val" id="archive-v-count-display">
             {visitCount}일
           </div>
           <div className="archive-stat-lbl">출석</div>
@@ -127,8 +118,8 @@ export function HomeStep({
       </div>
 
       <div
-        id="archive-cal-area"
         className={`archive-cal-card ${calLocked ? "archive-locked" : ""}`}
+        id="archive-cal-area"
       >
         <div className="archive-cal-head font-semibold">{monthLabel}</div>
         <div className="archive-cal-grid">
@@ -138,29 +129,21 @@ export function HomeStep({
             </div>
           ))}
           {days.map(({ day, isToday, hasDot }, i) => (
-            <div key={i}>
-              {day != null ? (
+            <div key={day == null ? `pad-${i}` : `day-${day}`}>
+              {day == null ? (
+                ""
+              ) : (
                 <>
-                  <span
-                    className={isToday ? "archive-today" : ""}
-                  >
-                    {day}
-                  </span>
+                  <span className={isToday ? "archive-today" : ""}>{day}</span>
                   {hasDot && <div className="archive-dot" />}
                 </>
-              ) : (
-                ""
               )}
             </div>
           ))}
         </div>
       </div>
 
-      <button
-        type="button"
-        className="archive-debug-reset"
-        onClick={onReset}
-      >
+      <button className="archive-debug-reset" onClick={onReset} type="button">
         [ 테스트용: 데이터 초기화 후 다시 시작 ]
       </button>
     </section>

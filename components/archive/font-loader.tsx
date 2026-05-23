@@ -8,7 +8,9 @@ const PRETENDARD_URL =
 export function ArchiveFontLoader() {
   useEffect(() => {
     const id = "archive-pretendard";
-    if (document.getElementById(id)) return;
+    if (document.getElementById(id)) {
+      return;
+    }
     const link = document.createElement("link");
     link.id = id;
     link.rel = "stylesheet";

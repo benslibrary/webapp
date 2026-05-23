@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type StampStepProps = {
   initialVisitCount: number;
@@ -38,18 +38,18 @@ export function StampStep({
   const stampedCount = visitCount;
 
   return (
-    <section className="archive-step active" aria-label="출석 도장">
+    <section aria-label="출석 도장" className="archive-step active">
       <h1 id="archive-stamp-title">{title}</h1>
       <div className="archive-stamp-card">
         {SLOTS.map((n) => (
           <div
-            key={n}
             className={`archive-stamp-slot ${n <= stampedCount ? "active-slot" : ""}`}
+            key={n}
           >
             {n}
             <div
-              className={`archive-mark-ink ${n <= stampedCount ? "stamped" : ""}`}
               aria-hidden
+              className={`archive-mark-ink ${n <= stampedCount ? "stamped" : ""}`}
             >
               B
             </div>
@@ -67,19 +67,15 @@ export function StampStep({
 
       {stampedCount < 5 && !showNext && (
         <button
-          type="button"
           className="archive-btn-main"
           onClick={handleStamp}
+          type="button"
         >
           도장 꽝 찍기
         </button>
       )}
       {showNext && (
-        <button
-          type="button"
-          className="archive-btn-sub"
-          onClick={onGoHome}
-        >
+        <button className="archive-btn-sub" onClick={onGoHome} type="button">
           홈으로 가기
         </button>
       )}

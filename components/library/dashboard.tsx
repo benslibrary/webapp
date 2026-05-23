@@ -3,7 +3,7 @@
 import { BookOpen, Home, PenLine, Search, Users } from "lucide-react";
 import type React from "react"; // [수정] useState 추가
 import { useState } from "react";
-import BookSearch from "@/components/library/BookSearch"; // [추가] 검색창 컴포넌트 임포트
+import BookSearch from "@/components/library/book-search";
 
 interface DashboardProps {
   nickname: string;

@@ -6,8 +6,8 @@ import postgres from "postgres";
 import { ChatSDKError } from "../errors";
 import {
   type Post,
-  post,
   type PostKind,
+  post,
   type User,
   user,
   type Visit,

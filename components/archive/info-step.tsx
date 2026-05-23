@@ -29,12 +29,11 @@ export function InfoStep({ onSubmit, onSkip }: InfoStepProps) {
   };
 
   const handleLoad = () => {
-    setError("");
-    alert("불러오기 기능은 준비 중입니다.");
+    setError("불러오기 기능은 준비 중입니다.");
   };
 
   return (
-    <section className="archive-step active" aria-label="정보 입력">
+    <section aria-label="정보 입력" className="archive-step active">
       <h1 className="archive-fade-up">
         당신의 정보를
         <br />
@@ -42,36 +41,40 @@ export function InfoStep({ onSubmit, onSkip }: InfoStepProps) {
       </h1>
       <div className="archive-input-group archive-fade-up">
         <input
-          type="text"
+          aria-label="별명"
           className="archive-input"
+          onChange={(e) => setNick(e.target.value)}
           placeholder="별명 입력"
           spellCheck={false}
+          type="text"
           value={nick}
-          onChange={(e) => setNick(e.target.value)}
-          aria-label="별명"
         />
         <input
+          aria-label="전화번호 뒷자리 4자리"
+          className="archive-input"
+          maxLength={4}
+          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+          placeholder="전화번호 뒷자리 4자리"
           ref={phoneRef}
           type="tel"
-          className="archive-input"
-          placeholder="전화번호 뒷자리 4자리"
-          maxLength={4}
           value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-          aria-label="전화번호 뒷자리 4자리"
         />
         {error && (
           <p className="text-sm mb-2" style={{ color: "var(--archive-point)" }}>
             {error}
           </p>
         )}
-        <button type="button" className="archive-btn-main" onClick={handleSubmit}>
+        <button
+          className="archive-btn-main"
+          onClick={handleSubmit}
+          type="button"
+        >
           입력하기
         </button>
-        <button type="button" className="archive-btn-sub" onClick={handleLoad}>
+        <button className="archive-btn-sub" onClick={handleLoad} type="button">
           불러오기
         </button>
-        <button type="button" className="archive-btn-skip" onClick={onSkip}>
+        <button className="archive-btn-skip" onClick={onSkip} type="button">
           넘어갈래요
         </button>
       </div>

@@ -22,10 +22,7 @@ async function NewPostContent() {
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
       <div className="relative flex w-full max-w-[430px] flex-col pb-12">
         <header className="flex items-center justify-between px-7 pt-12">
-          <Link
-            className="font-medium text-[14px] text-zinc-500"
-            href="/board"
-          >
+          <Link className="font-medium text-[14px] text-zinc-500" href="/board">
             ← 게시판
           </Link>
         </header>

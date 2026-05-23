@@ -1,7 +1,9 @@
 "use client";
 
 import { ArrowLeft, MapPin, Search } from "lucide-react";
-import { useState } from "react"; // [문제 1 해결] 알파벳 순으로 정렬된 임포트
+import { useState } from "react";
+
+const SHELF_IDS = Array.from({ length: 15 }, (_, i) => i + 1);
 
 interface BookSearchProps {
   onBack: () => void;
@@ -87,10 +89,10 @@ export default function BookSearch({ onBack }: BookSearchProps) {
               <MapPin size={12} /> Shelf Location Guide
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {Array.from({ length: 15 }).map((_, i) => (
+              {SHELF_IDS.map((shelfId) => (
                 <div
-                  className={`h-6 rounded-sm border transition-all duration-500 ${selectedLocation === i + 1 ? "bg-red-600 border-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" : "bg-zinc-900 border-zinc-800"}`}
-                  key={`shelf-${i + 1}`}
+                  className={`h-6 rounded-sm border transition-all duration-500 ${selectedLocation === shelfId ? "bg-red-600 border-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" : "bg-zinc-900 border-zinc-800"}`}
+                  key={`shelf-${shelfId}`}
                 />
               ))}
             </div>

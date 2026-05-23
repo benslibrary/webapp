@@ -48,9 +48,7 @@ export function PostItCard({
       <p className="flex-1 whitespace-pre-wrap break-words font-medium text-[14px] leading-snug">
         {content}
       </p>
-      <div className="text-[11px] opacity-60">
-        — {authorNickname || "익명"}
-      </div>
+      <div className="text-[11px] opacity-60">— {authorNickname || "익명"}</div>
     </div>
   );
 }

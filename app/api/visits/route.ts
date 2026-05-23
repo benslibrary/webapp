@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
 import { STORE_LAT, STORE_LNG, STORE_RADIUS_M } from "@/lib/constants";
-import {
-  getVisitsForUserInRange,
-  recordVisit,
-} from "@/lib/db/queries";
+import { getVisitsForUserInRange, recordVisit } from "@/lib/db/queries";
 import { haversineMeters, kstDateStamp, kstDayBounds } from "@/lib/geo";
 
 const bodySchema = z.object({
@@ -26,10 +23,7 @@ export async function POST(request: Request) {
   try {
     parsed = bodySchema.parse(await request.json());
   } catch (_e) {
-    return NextResponse.json(
-      { error: "잘못된 좌표입니다." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "잘못된 좌표입니다." }, { status: 400 });
   }
 
   const distance = haversineMeters(parsed, { lat: STORE_LAT, lng: STORE_LNG });

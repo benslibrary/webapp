@@ -3,10 +3,7 @@
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 import { POST_KINDS, type PostKind } from "@/lib/db/schema";
-import {
-  type CreatePostState,
-  createPostAction,
-} from "../actions";
+import { type CreatePostState, createPostAction } from "../actions";
 
 const INITIAL_STATE: CreatePostState = { status: "idle" };
 

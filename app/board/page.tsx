@@ -51,8 +51,7 @@ async function BoardContent() {
           <div className="mt-16 px-7 text-center">
             <p className="text-[15px] text-zinc-500">
               아직 작성된 글이 없어요.
-              <br />
-              첫 메모를 남겨보세요.
+              <br />첫 메모를 남겨보세요.
             </p>
           </div>
         ) : (

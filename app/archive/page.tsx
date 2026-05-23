@@ -84,7 +84,7 @@ async function ArchiveContent() {
               {calendarCells.map((day, i) => (
                 <div
                   className="relative flex flex-col items-center justify-center py-1"
-                  key={`${day}-${i}`}
+                  key={day === null ? `pad-${i}` : `day-${day}`}
                 >
                   {day === null ? null : (
                     <>

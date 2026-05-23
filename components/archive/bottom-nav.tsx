@@ -12,21 +12,17 @@ const ITEMS: { label: string; href: string | null }[] = [
 
 export function BottomNav() {
   return (
-    <nav className="archive-bottom-nav" aria-label="하단 메뉴">
-      {ITEMS.map(({ label, href }, i) =>
+    <nav aria-label="하단 메뉴" className="archive-bottom-nav">
+      {ITEMS.map(({ label, href }) =>
         href ? (
-          <Link
-            key={label}
-            href={href}
-            className="archive-nav-item"
-          >
+          <Link className="archive-nav-item" href={href} key={label}>
             {label}
           </Link>
         ) : (
           <span
-            key={label}
-            className="archive-nav-item active"
             aria-current="page"
+            className="archive-nav-item active"
+            key={label}
           >
             {label}
           </span>

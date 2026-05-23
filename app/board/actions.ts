@@ -1,11 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
 import { createPost } from "@/lib/db/queries";
 import { POST_KINDS } from "@/lib/db/schema";
-import { revalidatePath } from "next/cache";
 
 const createPostSchema = z.object({
   kind: z.enum(POST_KINDS),
