@@ -85,6 +85,25 @@ export async function upsertUserFromNaver(
   }
 }
 
+export async function updateUserNickname({
+  userId,
+  nickname,
+}: {
+  userId: string;
+  nickname: string;
+}): Promise<User | null> {
+  try {
+    const [updated] = await db
+      .update(user)
+      .set({ nickname, updatedAt: new Date() })
+      .where(eq(user.id, userId))
+      .returning();
+    return updated ?? null;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to update nickname");
+  }
+}
+
 export async function recordVisit({
   userId,
   lat,

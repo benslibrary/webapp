@@ -105,7 +105,7 @@ export const {
       user.role = dbUser.role;
       return true;
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string;
         token.role = user.role ?? "customer";
@@ -113,6 +113,15 @@ export const {
         token.nickname = user.nickname;
         token.realName = user.realName;
         token.profileImage = user.profileImage;
+      }
+      if (
+        trigger === "update" &&
+        session &&
+        typeof session === "object" &&
+        "nickname" in session &&
+        typeof (session as { nickname: unknown }).nickname === "string"
+      ) {
+        token.nickname = (session as { nickname: string }).nickname;
       }
       return token;
     },

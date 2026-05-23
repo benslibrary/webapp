@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth, signOut } from "@/app/(auth)/auth";
 import { BottomNav } from "@/components/bottom-nav";
+import { NicknameEditor } from "./nickname-editor";
 
 export default function MePage() {
   return (
@@ -54,7 +55,7 @@ async function MeContent() {
         </section>
 
         <section className="mt-6 flex flex-col gap-4 rounded-[24px] border border-zinc-900 bg-[#121212] p-6">
-          <ProfileRow label="닉네임" value={nickname} />
+          <NicknameEditor initialNickname={nickname} />
           <Divider />
           <ProfileRow label="회원이름" value={realName} />
           <Divider />
