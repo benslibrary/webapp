@@ -2,22 +2,27 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import { AUTH_SECRET_OR_DEV_FALLBACK } from "@/lib/constants";
 import { upsertUserFromNaver } from "@/lib/db/queries";
+import type { UserRole } from "@/lib/db/schema";
 import { authConfig } from "./auth.config";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role: UserRole;
       naverId?: string | null;
       nickname?: string | null;
+      realName?: string | null;
       profileImage?: string | null;
     } & DefaultSession["user"];
   }
 
   interface User {
     id?: string;
+    role?: UserRole;
     naverId?: string | null;
     nickname?: string | null;
+    realName?: string | null;
     profileImage?: string | null;
   }
 }
@@ -25,8 +30,10 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
+    role: UserRole;
     naverId?: string | null;
     nickname?: string | null;
+    realName?: string | null;
     profileImage?: string | null;
   }
 }
@@ -69,11 +76,12 @@ export const {
         const r = profile.response;
         return {
           id: r.id,
-          name: r.nickname ?? r.name ?? null,
+          name: r.name ?? r.nickname ?? null,
           email: r.email ?? null,
           image: r.profile_image ?? null,
           naverId: r.id,
-          nickname: r.nickname ?? r.name ?? null,
+          nickname: r.nickname ?? null,
+          realName: r.name ?? null,
           profileImage: r.profile_image ?? null,
         };
       },
@@ -89,17 +97,21 @@ export const {
         naverId: user.naverId,
         email: user.email ?? null,
         nickname: user.nickname ?? null,
+        name: user.realName ?? null,
         profileImage: user.profileImage ?? null,
       });
 
       user.id = dbUser.id;
+      user.role = dbUser.role;
       return true;
     },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
+        token.role = user.role ?? "customer";
         token.naverId = user.naverId;
         token.nickname = user.nickname;
+        token.realName = user.realName;
         token.profileImage = user.profileImage;
       }
       return token;
@@ -107,8 +119,10 @@ export const {
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.role = token.role;
         session.user.naverId = token.naverId;
         session.user.nickname = token.nickname;
+        session.user.realName = token.realName;
         session.user.profileImage = token.profileImage;
       }
       return session;
