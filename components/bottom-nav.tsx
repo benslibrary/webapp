@@ -4,6 +4,7 @@ import { Calendar, StickyNote, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Suspense } from "react";
 
 const STATIC_ITEMS = [
   { label: "출석", href: "/archive", icon: Calendar },
@@ -11,6 +12,14 @@ const STATIC_ITEMS = [
 ] as const;
 
 export function BottomNav() {
+  return (
+    <Suspense fallback={<NavSkeleton />}>
+      <NavInner />
+    </Suspense>
+  );
+}
+
+function NavInner() {
   const pathname = usePathname();
   const { status } = useSession();
   const accountItem =
@@ -42,5 +51,14 @@ export function BottomNav() {
         );
       })}
     </nav>
+  );
+}
+
+function NavSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="-translate-x-1/2 fixed bottom-0 left-1/2 z-50 h-[68px] w-full max-w-[430px] border-zinc-900 border-t bg-black/90 backdrop-blur-lg"
+    />
   );
 }
