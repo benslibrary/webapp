@@ -56,28 +56,6 @@ export const visit = pgTable(
 
 export type Visit = InferSelectModel<typeof visit>;
 
-export const POST_KINDS = ["필사", "후기", "메모"] as const;
-export type PostKind = (typeof POST_KINDS)[number];
-
-export const post = pgTable(
-  "Post",
-  {
-    id: uuid("id").primaryKey().notNull().defaultRandom(),
-    userId: uuid("userId")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    kind: varchar("kind", { length: 16, enum: POST_KINDS }).notNull(),
-    content: text("content").notNull(),
-    bookTitle: varchar("bookTitle", { length: 200 }),
-    createdAt: timestamp("createdAt").notNull().defaultNow(),
-  },
-  (table) => ({
-    createdAtIdx: index("Post_createdAt_idx").on(table.createdAt),
-  })
-);
-
-export type Post = InferSelectModel<typeof post>;
-
 export const book = pgTable(
   "Book",
   {
@@ -103,3 +81,26 @@ export const book = pgTable(
 );
 
 export type Book = InferSelectModel<typeof book>;
+
+export const record = pgTable(
+  "Record",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => book.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    createdAtIdx: index("Record_createdAt_idx").on(table.createdAt),
+    userIdx: index("Record_userId_idx").on(table.userId),
+    bookIdx: index("Record_bookId_idx").on(table.bookId),
+  })
+);
+
+export type Record = InferSelectModel<typeof record>;

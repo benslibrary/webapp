@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, StickyNote, User } from "lucide-react";
+import { BookOpenText, Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -8,7 +8,7 @@ import { Suspense } from "react";
 
 const STATIC_ITEMS = [
   { label: "출석", href: "/archive", icon: Calendar },
-  { label: "게시판", href: "/board", icon: StickyNote },
+  { label: "기록", href: "/records", icon: BookOpenText },
 ] as const;
 
 export function BottomNav() {

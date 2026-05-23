@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth, signOut } from "@/app/(auth)/auth";
 import { BottomNav } from "@/components/bottom-nav";
+import { listRecordsByUser } from "@/lib/db/queries";
+import { MyRecordItem } from "./my-record-item";
 import { NicknameEditor } from "./nickname-editor";
 
 export default function MePage() {
@@ -23,6 +25,7 @@ async function MeContent() {
   }
 
   const { nickname, realName, email, profileImage, role } = session.user;
+  const myRecords = await listRecordsByUser({ userId: session.user.id });
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
@@ -67,12 +70,29 @@ async function MeContent() {
           이메일 주소)은 동의하지 않으셨다면 "미제공"으로 표시됩니다.
         </p>
 
+        <section className="mt-10">
+          <h2 className="px-1 font-bold text-[18px] text-zinc-200">
+            내 기록 ({myRecords.length})
+          </h2>
+          {myRecords.length === 0 ? (
+            <p className="mt-4 text-[13px] text-zinc-500">
+              아직 작성한 기록이 없어요.
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-3">
+              {myRecords.map((r) => (
+                <MyRecordItem key={r.id} record={r} />
+              ))}
+            </ul>
+          )}
+        </section>
+
         <form
           action={async () => {
             "use server";
             await signOut({ redirectTo: "/" });
           }}
-          className="mt-8"
+          className="mt-10"
         >
           <button
             className="w-full rounded-[24px] border border-zinc-800 py-4 font-medium text-[15px] text-zinc-400 transition-all active:scale-[0.97]"

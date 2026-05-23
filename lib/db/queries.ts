@@ -8,9 +8,8 @@ import { getPostgresUrl } from "./connection";
 import {
   type Book,
   book,
-  type Post,
-  type PostKind,
-  post,
+  type Record as RecordRow,
+  record,
   type User,
   user,
   type Visit,
@@ -171,87 +170,174 @@ export async function getRecentVisitsByUser({
   }
 }
 
-export type PostWithAuthor = Post & {
+export type RecordWithRelations = RecordRow & {
   authorNickname: string | null;
   authorProfileImage: string | null;
+  bookTitle: string;
+  bookAuthor: string | null;
+  bookIsbn: string;
+  bookCoverImageUrl: string | null;
 };
 
-export async function listPosts({
+const RECORD_RELATION_SELECT = {
+  id: record.id,
+  userId: record.userId,
+  bookId: record.bookId,
+  content: record.content,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+  authorNickname: user.nickname,
+  authorProfileImage: user.profileImage,
+  bookTitle: book.title,
+  bookAuthor: book.author,
+  bookIsbn: book.isbn,
+  bookCoverImageUrl: book.coverImageUrl,
+} as const;
+
+export async function listRecords({
   limit = 30,
   before,
 }: {
   limit?: number;
   before?: Date;
-}): Promise<PostWithAuthor[]> {
+} = {}): Promise<RecordWithRelations[]> {
   try {
-    const rows = await db
-      .select({
-        id: post.id,
-        userId: post.userId,
-        kind: post.kind,
-        content: post.content,
-        bookTitle: post.bookTitle,
-        createdAt: post.createdAt,
-        authorNickname: user.nickname,
-        authorProfileImage: user.profileImage,
-      })
-      .from(post)
-      .leftJoin(user, eq(post.userId, user.id))
-      .where(before ? lt(post.createdAt, before) : undefined)
-      .orderBy(desc(post.createdAt))
+    return await db
+      .select(RECORD_RELATION_SELECT)
+      .from(record)
+      .innerJoin(book, eq(record.bookId, book.id))
+      .leftJoin(user, eq(record.userId, user.id))
+      .where(before ? lt(record.createdAt, before) : undefined)
+      .orderBy(desc(record.createdAt))
       .limit(limit);
-
-    return rows.map((row) => ({
-      ...row,
-      kind: row.kind as PostKind,
-    }));
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to list posts");
+    throw new ChatSDKError("bad_request:database", "Failed to list records");
   }
 }
 
-export async function createPost({
+export async function listRecordsByUser({
   userId,
-  kind,
-  content,
-  bookTitle,
+  limit = 100,
 }: {
   userId: string;
-  kind: PostKind;
+  limit?: number;
+}): Promise<RecordWithRelations[]> {
+  try {
+    return await db
+      .select(RECORD_RELATION_SELECT)
+      .from(record)
+      .innerJoin(book, eq(record.bookId, book.id))
+      .leftJoin(user, eq(record.userId, user.id))
+      .where(eq(record.userId, userId))
+      .orderBy(desc(record.createdAt))
+      .limit(limit);
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to list user records"
+    );
+  }
+}
+
+export async function listRecordsForBook({
+  bookId,
+  limit = 50,
+}: {
+  bookId: string;
+  limit?: number;
+}): Promise<RecordWithRelations[]> {
+  try {
+    return await db
+      .select(RECORD_RELATION_SELECT)
+      .from(record)
+      .innerJoin(book, eq(record.bookId, book.id))
+      .leftJoin(user, eq(record.userId, user.id))
+      .where(eq(record.bookId, bookId))
+      .orderBy(desc(record.createdAt))
+      .limit(limit);
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to list book records"
+    );
+  }
+}
+
+export async function getOwnRecord({
+  recordId,
+  userId,
+}: {
+  recordId: string;
+  userId: string;
+}): Promise<RecordRow | null> {
+  try {
+    const [row] = await db
+      .select()
+      .from(record)
+      .where(and(eq(record.id, recordId), eq(record.userId, userId)))
+      .limit(1);
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to get record");
+  }
+}
+
+export async function createRecord({
+  userId,
+  bookId,
+  content,
+}: {
+  userId: string;
+  bookId: string;
   content: string;
-  bookTitle?: string | null;
-}): Promise<Post> {
+}): Promise<RecordRow> {
   try {
     const [inserted] = await db
-      .insert(post)
-      .values({
-        userId,
-        kind,
-        content,
-        bookTitle: bookTitle ?? null,
-      })
+      .insert(record)
+      .values({ userId, bookId, content })
       .returning();
     return inserted;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to create post");
+    throw new ChatSDKError("bad_request:database", "Failed to create record");
   }
 }
 
-export async function deletePost({
-  postId,
+export async function updateOwnRecord({
+  recordId,
+  userId,
+  content,
+}: {
+  recordId: string;
+  userId: string;
+  content: string;
+}): Promise<RecordRow | null> {
+  try {
+    const [updated] = await db
+      .update(record)
+      .set({ content, updatedAt: new Date() })
+      .where(and(eq(record.id, recordId), eq(record.userId, userId)))
+      .returning();
+    return updated ?? null;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to update record");
+  }
+}
+
+export async function deleteOwnRecord({
+  recordId,
   userId,
 }: {
-  postId: string;
+  recordId: string;
   userId: string;
 }): Promise<boolean> {
   try {
     const deleted = await db
-      .delete(post)
-      .where(and(eq(post.id, postId), eq(post.userId, userId)))
-      .returning({ id: post.id });
+      .delete(record)
+      .where(and(eq(record.id, recordId), eq(record.userId, userId)))
+      .returning({ id: record.id });
     return deleted.length > 0;
   } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to delete post");
+    throw new ChatSDKError("bad_request:database", "Failed to delete record");
   }
 }
 
