@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
@@ -57,6 +57,7 @@ export async function createRecordAction(
 
   revalidatePath("/records");
   revalidatePath("/me");
+  updateTag("records");
   redirect("/records");
 }
 
@@ -100,6 +101,7 @@ export async function updateRecordAction({
 
   revalidatePath("/records");
   revalidatePath("/me");
+  updateTag("records");
   return { ok: true };
 }
 
@@ -115,6 +117,7 @@ export async function deleteRecordAction(formData: FormData): Promise<void> {
   await deleteOwnRecord({ recordId, userId: session.user.id });
   revalidatePath("/records");
   revalidatePath("/me");
+  updateTag("records");
 }
 
 // re-export for /records/new prefill validation

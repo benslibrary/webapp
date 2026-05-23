@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { auth } from "@/app/(auth)/auth";
 import { BottomNav } from "@/components/bottom-nav";
-import { getBookByIsbn, listRecordsForBook } from "@/lib/db/queries";
+import {
+  cachedGetBookByIsbn,
+  cachedListRecordsForBook,
+} from "@/lib/cached-queries";
 import { kstDateStamp } from "@/lib/geo";
 import { normalizeIsbn } from "@/lib/nat-lib";
 
@@ -25,21 +27,20 @@ export default function BookDetailPage({
 }
 
 async function Content({ params }: { params: Promise<{ isbn: string }> }) {
-  await connection();
   const { isbn: raw } = await params;
   const normalized = normalizeIsbn(raw);
   if (!normalized) {
     notFound();
   }
 
-  const book = await getBookByIsbn(normalized);
+  const book = await cachedGetBookByIsbn(normalized);
   if (!book) {
     notFound();
   }
 
   const [session, records] = await Promise.all([
     auth(),
-    listRecordsForBook({ bookId: book.id }),
+    cachedListRecordsForBook(book.id),
   ]);
 
   const formattedDate = formatPublishDate(book.publishDate);

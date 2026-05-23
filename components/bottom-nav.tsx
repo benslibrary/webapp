@@ -1,15 +1,16 @@
 "use client";
 
-import { BookOpenText, Calendar, User } from "lucide-react";
+import { BookOpenText, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Suspense } from "react";
 
-const STATIC_ITEMS = [
-  { label: "출석", href: "/archive", icon: Calendar },
-  { label: "기록", href: "/records", icon: BookOpenText },
-] as const;
+const RECORD_TAB = {
+  label: "기록",
+  href: "/records",
+  icon: BookOpenText,
+} as const;
 
 export function BottomNav() {
   return (
@@ -26,7 +27,7 @@ function NavInner() {
     status === "authenticated"
       ? { label: "내정보", href: "/me", icon: User }
       : { label: "로그인", href: "/login", icon: User };
-  const items = [...STATIC_ITEMS, accountItem];
+  const items = [RECORD_TAB, accountItem];
 
   return (
     <nav

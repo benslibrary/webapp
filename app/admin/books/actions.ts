@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { deleteBookByIsbn, upsertBook } from "@/lib/db/queries";
 import { lookupBookByIsbn, normalizeIsbn } from "@/lib/nat-lib";
@@ -78,6 +78,7 @@ export async function addBooksAction(
 
   revalidatePath("/admin/books");
   revalidatePath("/books");
+  updateTag("books");
   return { results };
 }
 
@@ -90,4 +91,5 @@ export async function deleteBookAction(formData: FormData): Promise<void> {
   await deleteBookByIsbn(isbn);
   revalidatePath("/admin/books");
   revalidatePath("/books");
+  updateTag("books");
 }

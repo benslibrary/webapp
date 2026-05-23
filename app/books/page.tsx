@@ -1,9 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { BottomNav } from "@/components/bottom-nav";
-import { listBooks } from "@/lib/db/queries";
+import { cachedListBooks } from "@/lib/cached-queries";
 
 export default function BooksPage() {
   return (
@@ -17,8 +16,7 @@ export default function BooksPage() {
 }
 
 async function Content() {
-  await connection();
-  const books = await listBooks({ limit: 200 });
+  const books = await cachedListBooks(200);
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">

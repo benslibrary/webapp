@@ -47,7 +47,7 @@ export function CheckInButton({ disabled }: { disabled: boolean }) {
             );
           } else if (res.status === 401) {
             toast.error("로그인이 필요해요.");
-            router.push("/login?callbackUrl=/archive");
+            router.push("/login?callbackUrl=/me");
           } else {
             toast.error(data.error ?? "출석 체크에 실패했어요.");
           }
@@ -81,17 +81,17 @@ export function CheckInButton({ disabled }: { disabled: boolean }) {
       return "위치 확인 중…";
     }
     if (status === "submitting") {
-      return "출석 등록 중…";
+      return "출석 중…";
     }
-    return "출석 체크하기";
+    return "출석";
   })();
 
   return (
     <button
       className={
         disabled
-          ? "w-full cursor-not-allowed rounded-[24px] bg-zinc-900 py-5 font-bold text-[18px] text-zinc-600"
-          : "w-full rounded-[24px] bg-white py-5 font-bold text-[18px] text-black transition-all active:scale-[0.96] disabled:cursor-wait disabled:opacity-70"
+          ? "shrink-0 cursor-not-allowed rounded-full bg-zinc-900 px-4 py-2 font-bold text-[12px] text-zinc-600"
+          : "shrink-0 rounded-full bg-white px-4 py-2 font-bold text-[12px] text-black transition-all active:scale-95 disabled:cursor-wait disabled:opacity-70"
       }
       disabled={disabled || status !== "idle"}
       onClick={handleClick}

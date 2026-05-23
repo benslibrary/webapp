@@ -9,7 +9,7 @@ export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const { status } = useSession();
-  const callbackUrl = params.get("callbackUrl") || "/archive";
+  const callbackUrl = params.get("callbackUrl") || "/me";
 
   useEffect(() => {
     if (status === "authenticated") {

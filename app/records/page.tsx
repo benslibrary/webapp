@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { auth } from "@/app/(auth)/auth";
 import { BottomNav } from "@/components/bottom-nav";
-import { listRecords } from "@/lib/db/queries";
+import { cachedListRecords } from "@/lib/cached-queries";
 import { kstDateStamp } from "@/lib/geo";
 
 const LATEST_LIMIT = 30;
@@ -20,8 +20,10 @@ export default function RecordsPage() {
 }
 
 async function Content() {
-  const session = await auth();
-  const records = await listRecords({ limit: LATEST_LIMIT });
+  const [session, records] = await Promise.all([
+    auth(),
+    cachedListRecords(LATEST_LIMIT),
+  ]);
   const writeHref = session?.user
     ? "/records/new"
     : "/login?callbackUrl=/records/new";

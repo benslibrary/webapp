@@ -41,7 +41,6 @@ export async function updateNicknameAction(
   }
 
   revalidatePath("/me");
-  revalidatePath("/archive");
   revalidatePath("/records");
   return { ok: true, nickname: updated.nickname ?? parsed.data };
 }

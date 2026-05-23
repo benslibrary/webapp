@@ -14,7 +14,7 @@ export default function Page() {
 async function PageContent() {
   const session = await auth();
   if (session?.user) {
-    redirect("/archive");
+    redirect("/me");
   }
   return <Landing />;
 }
