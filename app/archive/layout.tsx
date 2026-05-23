@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { ArchiveFontLoader } from "@/components/archive/FontLoader";
+import { ArchiveFontLoader } from "@/components/archive/font-loader";
 import "./archive.css";
 
 export const metadata: Metadata = {
