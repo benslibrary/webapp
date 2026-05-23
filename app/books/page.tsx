@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { listBooks } from "@/lib/db/queries";
@@ -16,6 +17,7 @@ export default function BooksPage() {
 }
 
 async function Content() {
+  await connection();
   const books = await listBooks({ limit: 200 });
 
   return (
@@ -44,7 +46,6 @@ async function Content() {
                       className="rounded-md object-cover"
                       height={84}
                       src={b.coverImageUrl}
-                      unoptimized
                       width={60}
                     />
                   ) : (

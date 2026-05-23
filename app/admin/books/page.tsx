@@ -57,7 +57,6 @@ async function Content() {
                       className="rounded-md object-cover"
                       height={72}
                       src={b.coverImageUrl}
-                      unoptimized
                       width={52}
                     />
                   ) : (

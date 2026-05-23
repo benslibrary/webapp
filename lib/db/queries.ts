@@ -1,8 +1,8 @@
 import "server-only";
 
+import { neon } from "@neondatabase/serverless";
 import { and, asc, between, desc, eq, lt } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/neon-http";
 import { AppError } from "../errors";
 import { getPostgresUrl } from "./connection";
 import {
@@ -16,9 +16,30 @@ import {
   visit,
 } from "./schema";
 
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(getPostgresUrl()!);
-const db = drizzle(client);
+// Lazy connection: don't touch neon() at module load (it parses the URL
+// synchronously and fetches at first query; both fail during build
+// prerender when env vars aren't in scope). Build the client on first
+// real query instead.
+type DrizzleDb = ReturnType<typeof drizzle>;
+let cachedDb: DrizzleDb | null = null;
+function getDb(): DrizzleDb {
+  if (cachedDb) {
+    return cachedDb;
+  }
+  const url = getPostgresUrl();
+  if (!url) {
+    throw new Error(
+      "Postgres URL is required at runtime — set BENSLIB_POSTGRES_URL in Vercel or POSTGRES_URL in .env.local"
+    );
+  }
+  cachedDb = drizzle(neon(url));
+  return cachedDb;
+}
+const db = new Proxy({} as DrizzleDb, {
+  get(_target, prop: keyof DrizzleDb) {
+    return getDb()[prop];
+  },
+});
 
 export async function getUserByNaverId(naverId: string): Promise<User | null> {
   try {

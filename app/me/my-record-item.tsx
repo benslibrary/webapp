@@ -56,7 +56,6 @@ export function MyRecordItem({ record }: { record: RecordWithRelations }) {
             className="rounded object-cover"
             height={56}
             src={record.bookCoverImageUrl}
-            unoptimized
             width={40}
           />
         ) : (

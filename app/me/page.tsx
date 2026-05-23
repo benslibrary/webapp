@@ -39,7 +39,6 @@ async function MeContent() {
               className="rounded-full"
               height={64}
               src={profileImage}
-              unoptimized
               width={64}
             />
           ) : (

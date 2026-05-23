@@ -67,7 +67,6 @@ async function Content() {
                       className="rounded object-cover"
                       height={56}
                       src={r.bookCoverImageUrl}
-                      unoptimized
                       width={40}
                     />
                   ) : (

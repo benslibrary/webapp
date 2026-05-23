@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { getBookByIsbn } from "@/lib/db/queries";
@@ -22,6 +23,7 @@ export default function BookDetailPage({
 }
 
 async function Content({ params }: { params: Promise<{ isbn: string }> }) {
+  await connection();
   const { isbn: raw } = await params;
   const normalized = normalizeIsbn(raw);
   if (!normalized) {
@@ -49,7 +51,6 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
               className="rounded-lg object-cover shadow-2xl shadow-black"
               height={168}
               src={book.coverImageUrl}
-              unoptimized
               width={120}
             />
           ) : (
