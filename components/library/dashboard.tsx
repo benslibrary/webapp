@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Home, PenLine, Search, Users } from "lucide-react";
+import { Home, PenLine, Search, Users } from "lucide-react";
 import type React from "react"; // [수정] useState 추가
 import { useState } from "react";
 import BookSearch from "@/components/library/book-search";
@@ -116,7 +116,6 @@ export default function Dashboard({ nickname }: DashboardProps) {
       <nav className="fixed bottom-8 left-1/2 w-[92%] -translate-x-1/2 rounded-[28px] border border-white/5 bg-zinc-900/80 p-2 shadow-2xl backdrop-blur-xl">
         <ul className="flex items-center justify-around">
           <NavItem active icon={<Home size={20} />} label="홈" />
-          <NavItem icon={<BookOpen size={20} />} label="책추천" />
 
           {/* [수정] 책검색 클릭 시 스위치 On! */}
           <button
