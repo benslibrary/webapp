@@ -1,52 +1,30 @@
-"use client";
-
-import { useState } from "react";
-import Dashboard from "@/components/library/Dashboard";
-import Onboarding from "@/components/library/Onboarding";
-import Opening from "@/components/library/Opening";
-import StampCard from "@/components/library/StampCard";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { auth } from "@/app/(auth)/auth";
+import { LibraryFlow } from "./library-flow";
 
 export default function Page() {
-  const [step, setStep] = useState(1);
-  const [userInfo, setUserInfo] = useState({ nickname: "", phoneTail: "" });
-
-  const handleOnboardingNext = (data: {
-    nickname: string;
-    phoneTail: string;
-  }) => {
-    setUserInfo(data);
-    setStep(3);
-  };
-
   return (
-    <main className="flex min-h-screen w-full justify-center bg-zinc-950 font-sans text-white">
-      <div className="relative flex w-full max-w-[430px] flex-col overflow-hidden border-x border-zinc-900 bg-black shadow-2xl">
-        {step === 1 && (
-          <Opening
-            onNext={() => {
-              return setStep(2);
-            }}
-          />
-        )}
+    <Suspense fallback={<LandingSkeleton />}>
+      <PageContent />
+    </Suspense>
+  );
+}
 
-        {step === 2 && (
-          <Onboarding
-            onNext={handleOnboardingNext}
-            onSkip={() => {
-              return setStep(3);
-            }}
-          />
-        )}
+async function PageContent() {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/archive");
+  }
+  return <LibraryFlow />;
+}
 
-        {step === 3 && (
-          <StampCard
-            onComplete={() => {
-              return setStep(4);
-            }}
-          />
-        )}
-
-        {step === 4 && <Dashboard nickname={userInfo.nickname} />}
+function LandingSkeleton() {
+  return (
+    <main className="flex min-h-screen w-full justify-center bg-black">
+      <div className="relative flex w-full max-w-[430px] flex-col px-7 py-12">
+        <div className="mt-20 h-12 w-3/4 animate-pulse rounded bg-zinc-900" />
+        <div className="mt-4 h-6 w-2/3 animate-pulse rounded bg-zinc-900" />
       </div>
     </main>
   );
