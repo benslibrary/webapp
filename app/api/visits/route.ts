@@ -10,6 +10,16 @@ const bodySchema = z.object({
   lng: z.number().gte(-180).lte(180),
 });
 
+function isUniqueViolation(err: unknown): boolean {
+  if (err && typeof err === "object" && "code" in err && err.code === "23505") {
+    return true;
+  }
+  if (err instanceof Error && err.message.includes("duplicate key")) {
+    return true;
+  }
+  return false;
+}
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -51,11 +61,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const created = await recordVisit({
-    userId: session.user.id,
-    lat: parsed.lat,
-    lng: parsed.lng,
-  });
-
-  return NextResponse.json({ visit: created }, { status: 201 });
+  try {
+    const created = await recordVisit({
+      userId: session.user.id,
+      lat: parsed.lat,
+      lng: parsed.lng,
+    });
+    return NextResponse.json({ visit: created }, { status: 201 });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      // Raced past the existing-row check above; the DB caught it.
+      return NextResponse.json(
+        { error: "오늘은 이미 출석 체크가 완료되었어요." },
+        { status: 409 }
+      );
+    }
+    throw err;
+  }
 }

@@ -147,7 +147,18 @@ export async function recordVisit({
       .values({ userId, lat, lng })
       .returning();
     return inserted;
-  } catch (_error) {
+  } catch (error) {
+    // Preserve unique-violation errors so the API route can map them to
+    // 409 instead of a generic 500 — Visit has a unique index on
+    // (userId, KST date) that catches concurrent POSTs.
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505"
+    ) {
+      throw error;
+    }
     throw new AppError("bad_request:database", "Failed to record visit");
   }
 }
@@ -197,25 +208,6 @@ export async function hasVisitedInRange({
       "bad_request:database",
       "Failed to check visit for range"
     );
-  }
-}
-
-export async function getRecentVisitsByUser({
-  userId,
-  limit = 10,
-}: {
-  userId: string;
-  limit?: number;
-}): Promise<Visit[]> {
-  try {
-    return await db
-      .select()
-      .from(visit)
-      .where(eq(visit.userId, userId))
-      .orderBy(desc(visit.visitedAt))
-      .limit(limit);
-  } catch (_error) {
-    throw new AppError("bad_request:database", "Failed to get recent visits");
   }
 }
 

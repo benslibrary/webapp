@@ -85,6 +85,32 @@ export function AutoCheckIn({ alreadyVisited }: { alreadyVisited: boolean }) {
     run();
   }, [alreadyVisited, run]);
 
+  // Retry when the tab becomes visible again — covers the "open the app
+  // on the way to the store, walk in with the tab already open" path so
+  // the user doesn't have to refresh or hunt for 다시 시도.
+  useEffect(() => {
+    if (alreadyVisited) {
+      return;
+    }
+    const handler = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+      // Only retry if the previous attempt finished in a recoverable
+      // state — don't kick off another geolocation request mid-flight.
+      if (
+        status === "outOfRange" ||
+        status === "denied" ||
+        status === "error" ||
+        status === "unsupported"
+      ) {
+        run();
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [alreadyVisited, status, run]);
+
   return <StatusBadge onRetry={run} status={status} />;
 }
 

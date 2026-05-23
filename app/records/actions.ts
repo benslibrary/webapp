@@ -8,7 +8,6 @@ import { getBoardAccess } from "@/lib/auth-helpers";
 import {
   createRecord,
   deleteOwnRecord,
-  getBookByIsbn,
   updateOwnRecord,
 } from "@/lib/db/queries";
 
@@ -125,10 +124,4 @@ export async function deleteRecordAction(formData: FormData): Promise<void> {
   revalidatePath("/records");
   revalidatePath("/me");
   updateTag("records");
-}
-
-// re-export for /records/new prefill validation
-export async function bookExistsByIsbn(isbn: string): Promise<boolean> {
-  const b = await getBookByIsbn(isbn);
-  return Boolean(b);
 }
