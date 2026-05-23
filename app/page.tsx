@@ -12,8 +12,6 @@ export default function Page() {
 
 async function Redirector() {
   const session = await auth();
-  if (session?.user) {
-    redirect("/me");
-  }
-  redirect("/login");
+  redirect(session?.user ? "/me" : "/login");
+  return null;
 }
