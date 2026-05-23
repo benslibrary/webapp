@@ -34,6 +34,10 @@ export function RecordForm({
       toast.error(state.message ?? "로그인이 필요합니다.");
       return;
     }
+    if (state.status === "needsCheckIn") {
+      toast.error(state.message ?? "오늘 출석체크 후 작성할 수 있어요.");
+      return;
+    }
     if (state.status === "invalid" || state.status === "failed") {
       toast.error(state.message ?? "오류가 발생했어요.");
     }

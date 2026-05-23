@@ -1,8 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { auth } from "@/app/(auth)/auth";
+import {
+  AnonymousBoardPrompt,
+  NeedsCheckInPrompt,
+} from "@/components/board-gate-prompt";
 import { BottomNav } from "@/components/bottom-nav";
+import { getBoardAccess } from "@/lib/auth-helpers";
 import { cachedListRecords } from "@/lib/cached-queries";
 import { kstDateStamp } from "@/lib/geo";
 
@@ -20,13 +24,15 @@ export default function RecordsPage() {
 }
 
 async function Content() {
-  const [session, records] = await Promise.all([
-    auth(),
-    cachedListRecords(LATEST_LIMIT),
-  ]);
-  const writeHref = session?.user
-    ? "/records/new"
-    : "/login?callbackUrl=/records/new";
+  const access = await getBoardAccess();
+  if (access.kind === "anonymous") {
+    return <AnonymousBoardPrompt callbackUrl="/records" />;
+  }
+  if (access.kind === "needsCheckIn") {
+    return <NeedsCheckInPrompt />;
+  }
+
+  const records = await cachedListRecords(LATEST_LIMIT);
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
@@ -41,7 +47,7 @@ async function Content() {
           <Link
             aria-label="기록 작성"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-bold text-[22px] text-black leading-none transition-all active:scale-95"
-            href={writeHref}
+            href="/records/new"
           >
             +
           </Link>

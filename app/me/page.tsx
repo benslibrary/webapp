@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth, signOut } from "@/app/(auth)/auth";
+import { AutoCheckIn } from "@/components/auto-check-in";
 import { BottomNav } from "@/components/bottom-nav";
 import {
   getUserStats,
@@ -10,7 +11,6 @@ import {
   listRecordsByUser,
 } from "@/lib/db/queries";
 import { kstDateStamp, kstMonthBounds } from "@/lib/geo";
-import { CheckInButton } from "./check-in-button";
 import { MyRecordItem } from "./my-record-item";
 import { NicknameEditor } from "./nickname-editor";
 
@@ -106,15 +106,12 @@ async function MeContent() {
               {nickname?.slice(0, 1) ?? "?"}
             </div>
           )}
-          <div className="flex flex-1 flex-col gap-0.5">
+          <div className="flex flex-1 flex-col gap-1.5">
             <span className="font-bold text-[18px] text-white">
               {nickname || "닉네임 미설정"}
             </span>
-            <span className="text-[12px] text-zinc-500">
-              {role === "admin" ? "관리자" : "일반 회원"}
-            </span>
+            <AutoCheckIn alreadyVisited={hasVisitedToday} />
           </div>
-          <CheckInButton disabled={hasVisitedToday} />
         </section>
 
         <section className="mt-6 flex flex-col gap-4 rounded-[24px] border border-zinc-900 bg-[#121212] p-6">

@@ -2,8 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { auth } from "@/app/(auth)/auth";
+import {
+  AnonymousBoardPrompt,
+  NeedsCheckInPrompt,
+} from "@/components/board-gate-prompt";
 import { BottomNav } from "@/components/bottom-nav";
+import { getBoardAccess } from "@/lib/auth-helpers";
 import {
   cachedGetBookByIsbn,
   cachedListRecordsForBook,
@@ -33,20 +37,23 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
     notFound();
   }
 
+  const access = await getBoardAccess();
+  if (access.kind === "anonymous") {
+    return <AnonymousBoardPrompt callbackUrl={`/books/${normalized}`} />;
+  }
+  if (access.kind === "needsCheckIn") {
+    return <NeedsCheckInPrompt />;
+  }
+
   const book = await cachedGetBookByIsbn(normalized);
   if (!book) {
     notFound();
   }
 
-  const [session, records] = await Promise.all([
-    auth(),
-    cachedListRecordsForBook(book.id),
-  ]);
+  const records = await cachedListRecordsForBook(book.id);
 
   const formattedDate = formatPublishDate(book.publishDate);
-  const writeHref = session?.user
-    ? `/records/new?bookId=${book.id}`
-    : `/login?callbackUrl=${encodeURIComponent(`/records/new?bookId=${book.id}`)}`;
+  const writeHref = `/records/new?bookId=${book.id}`;
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">

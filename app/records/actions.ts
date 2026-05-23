@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
+import { getBoardAccess } from "@/lib/auth-helpers";
 import {
   createRecord,
   deleteOwnRecord,
@@ -21,7 +22,7 @@ const createRecordSchema = z.object({
 });
 
 export type CreateRecordState = {
-  status: "idle" | "invalid" | "unauthorized" | "failed";
+  status: "idle" | "invalid" | "unauthorized" | "needsCheckIn" | "failed";
   message?: string;
 };
 
@@ -29,9 +30,15 @@ export async function createRecordAction(
   _prev: CreateRecordState,
   formData: FormData
 ): Promise<CreateRecordState> {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const access = await getBoardAccess();
+  if (access.kind === "anonymous") {
     return { status: "unauthorized", message: "로그인이 필요합니다." };
+  }
+  if (access.kind === "needsCheckIn") {
+    return {
+      status: "needsCheckIn",
+      message: "오늘 매장 출석체크를 마쳐야 기록을 남길 수 있어요.",
+    };
   }
 
   const parsed = createRecordSchema.safeParse({
@@ -47,7 +54,7 @@ export async function createRecordAction(
 
   try {
     await createRecord({
-      userId: session.user.id,
+      userId: access.session.user.id,
       bookId: parsed.data.bookId,
       content: parsed.data.content,
     });

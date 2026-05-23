@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { auth } from "@/app/(auth)/auth";
+import {
+  AnonymousBoardPrompt,
+  NeedsCheckInPrompt,
+} from "@/components/board-gate-prompt";
+import { getBoardAccess } from "@/lib/auth-helpers";
 import { listBooks } from "@/lib/db/queries";
 import { RecordForm } from "./record-form";
 
@@ -22,13 +25,16 @@ async function Content({
 }: {
   searchParams: Promise<{ bookId?: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    redirect("/login?callbackUrl=/records/new");
+  const access = await getBoardAccess();
+  if (access.kind === "anonymous") {
+    return <AnonymousBoardPrompt callbackUrl="/records/new" />;
+  }
+  if (access.kind === "needsCheckIn") {
+    return <NeedsCheckInPrompt />;
   }
 
   const { bookId: prefillBookId } = await searchParams;
-  const books = await listBooks({ limit: 500 });
+  const books = await listBooks({ limit: 1000 });
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">

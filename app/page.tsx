@@ -32,9 +32,9 @@ function Landing() {
             환영해요!
           </h1>
           <p className="mt-6 font-medium text-[18px] text-zinc-500 leading-relaxed">
-            출석체크와 메모 작성은 로그인 후
+            매장에 방문하시면
             <br />
-            이용하실 수 있어요.
+            자동으로 모든 기능이 열려요.
           </p>
         </div>
 
@@ -44,12 +44,6 @@ function Landing() {
             href="/login"
           >
             시작하기
-          </Link>
-          <Link
-            className="flex w-full items-center justify-center rounded-[24px] border border-zinc-800 py-4 font-medium text-[15px] text-zinc-400 transition-all active:scale-[0.97]"
-            href="/records"
-          >
-            기록 둘러보기
           </Link>
         </div>
       </div>

@@ -172,6 +172,32 @@ export async function getVisitsForUserInRange({
   }
 }
 
+export async function hasVisitedInRange({
+  userId,
+  start,
+  end,
+}: {
+  userId: string;
+  start: Date;
+  end: Date;
+}): Promise<boolean> {
+  try {
+    const [row] = await db
+      .select({ id: visit.id })
+      .from(visit)
+      .where(
+        and(eq(visit.userId, userId), between(visit.visitedAt, start, end))
+      )
+      .limit(1);
+    return Boolean(row);
+  } catch (_error) {
+    throw new AppError(
+      "bad_request:database",
+      "Failed to check visit for range"
+    );
+  }
+}
+
 export async function getRecentVisitsByUser({
   userId,
   limit = 10,

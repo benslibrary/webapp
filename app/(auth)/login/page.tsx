@@ -14,9 +14,9 @@ export default function LoginPage() {
             환영해요!
           </h1>
           <p className="mt-6 font-medium text-[18px] text-zinc-500 leading-relaxed">
-            출석체크와 메모 작성을 위해
+            네이버 계정으로 로그인하고
             <br />
-            네이버 계정으로 로그인해주세요.
+            매장에서 위치 권한을 허용해주세요.
           </p>
         </div>
 

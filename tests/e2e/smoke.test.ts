@@ -19,7 +19,7 @@ test.describe("smoke", () => {
   test("anonymous landing shows login CTA, no stamp UI", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("link", { name: "시작하기" })).toBeVisible();
-    await expect(page.getByText("출석체크와 메모 작성은")).toBeVisible();
+    await expect(page.getByText("매장에 방문하시면")).toBeVisible();
     // The legacy mock 4-step flow (Opening / Onboarding / StampCard /
     // Dashboard) must not be reachable from / for anonymous visitors.
     await expect(page.getByText("Stamp Card")).not.toBeVisible();

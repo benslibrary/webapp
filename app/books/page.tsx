@@ -1,7 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import {
+  AnonymousBoardPrompt,
+  NeedsCheckInPrompt,
+} from "@/components/board-gate-prompt";
 import { BottomNav } from "@/components/bottom-nav";
+import { getBoardAccess } from "@/lib/auth-helpers";
 import { cachedListBooks } from "@/lib/cached-queries";
 
 export default function BooksPage() {
@@ -16,7 +21,15 @@ export default function BooksPage() {
 }
 
 async function Content() {
-  const books = await cachedListBooks(200);
+  const access = await getBoardAccess();
+  if (access.kind === "anonymous") {
+    return <AnonymousBoardPrompt callbackUrl="/books" />;
+  }
+  if (access.kind === "needsCheckIn") {
+    return <NeedsCheckInPrompt />;
+  }
+
+  const books = await cachedListBooks(1000);
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
