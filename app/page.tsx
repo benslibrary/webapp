@@ -22,7 +22,7 @@ async function PageContent() {
 function Landing() {
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
-      <div className="relative flex w-full max-w-[430px] flex-col justify-between px-7 py-12">
+      <div className="relative flex w-full max-w-[430px] flex-col px-7 py-12">
         <div className="mt-20">
           <h1 className="font-bold text-[34px] leading-[1.3]">
             안녕하세요!
@@ -32,20 +32,16 @@ function Landing() {
             환영해요!
           </h1>
           <p className="mt-6 font-medium text-[18px] text-zinc-500 leading-relaxed">
-            매장에 방문하시면
-            <br />
-            자동으로 모든 기능이 열려요.
+            매장에 방문 후 로그인 부탁합니다.
           </p>
         </div>
 
-        <div className="mb-4 flex flex-col gap-3">
-          <Link
-            className="flex w-full items-center justify-center rounded-[24px] bg-white py-5 font-bold text-[18px] text-black transition-all active:scale-[0.96]"
-            href="/login"
-          >
-            시작하기
-          </Link>
-        </div>
+        <Link
+          className="mt-10 flex w-full items-center justify-center rounded-[24px] bg-white py-5 font-bold text-[18px] text-black transition-all active:scale-[0.96]"
+          href="/login"
+        >
+          시작하기
+        </Link>
       </div>
     </main>
   );

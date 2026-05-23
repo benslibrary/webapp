@@ -4,7 +4,7 @@ import { LoginForm } from "./login-form";
 export default function LoginPage() {
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
-      <div className="relative flex w-full max-w-[430px] flex-col justify-between px-7 py-12">
+      <div className="relative flex w-full max-w-[430px] flex-col px-7 py-12">
         <div className="mt-20">
           <h1 className="font-bold text-[34px] leading-[1.3]">
             안녕하세요!
@@ -20,18 +20,16 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Suspense fallback={<LoginButtonSkeleton />}>
-          <LoginForm />
-        </Suspense>
+        <div className="mt-10">
+          <Suspense fallback={<LoginButtonSkeleton />}>
+            <LoginForm />
+          </Suspense>
+        </div>
       </div>
     </main>
   );
 }
 
 function LoginButtonSkeleton() {
-  return (
-    <div className="mb-4">
-      <div className="h-[68px] w-full rounded-[24px] bg-zinc-900" />
-    </div>
-  );
+  return <div className="h-[68px] w-full rounded-[24px] bg-zinc-900" />;
 }
