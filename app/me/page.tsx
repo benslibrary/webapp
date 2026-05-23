@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth, signOut } from "@/app/(auth)/auth";
 import { BottomNav } from "@/components/bottom-nav";
-import { listRecordsByUser } from "@/lib/db/queries";
+import { getUserStats, listRecordsByUser } from "@/lib/db/queries";
 import { MyRecordItem } from "./my-record-item";
 import { NicknameEditor } from "./nickname-editor";
 
@@ -24,8 +24,11 @@ async function MeContent() {
     redirect("/login?callbackUrl=/me");
   }
 
-  const { nickname, realName, email, profileImage, role } = session.user;
-  const myRecords = await listRecordsByUser({ userId: session.user.id });
+  const { nickname, profileImage, role } = session.user;
+  const [myRecords, stats] = await Promise.all([
+    listRecordsByUser({ userId: session.user.id }),
+    getUserStats({ userId: session.user.id }),
+  ]);
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
@@ -59,15 +62,10 @@ async function MeContent() {
         <section className="mt-6 flex flex-col gap-4 rounded-[24px] border border-zinc-900 bg-[#121212] p-6">
           <NicknameEditor initialNickname={nickname} />
           <Divider />
-          <ProfileRow label="회원이름" value={realName} />
+          <StatRow label="기록한 책" value={`${stats.recordCount}권`} />
           <Divider />
-          <ProfileRow label="이메일 주소" value={email} />
+          <StatRow label="방문 횟수" value={`${stats.visitCount}회`} />
         </section>
-
-        <p className="mt-4 px-2 text-[11px] text-zinc-600 leading-relaxed">
-          위 정보는 네이버 로그인 시 동의하신 항목입니다. 추가 항목(회원이름,
-          이메일 주소)은 동의하지 않으셨다면 "미제공"으로 표시됩니다.
-        </p>
 
         <section className="mt-10">
           <h2 className="px-1 font-bold text-[18px] text-zinc-200">
@@ -105,21 +103,13 @@ async function MeContent() {
   );
 }
 
-function ProfileRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
+function StatRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="font-medium text-[12px] text-zinc-500 uppercase tracking-wider">
         {label}
       </span>
-      <span className="text-[15px] text-white">
-        {value ? value : <span className="text-zinc-700">미제공</span>}
-      </span>
+      <span className="font-bold text-[15px] text-white">{value}</span>
     </div>
   );
 }

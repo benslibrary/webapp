@@ -1,7 +1,7 @@
 import "server-only";
 
 import { neon } from "@neondatabase/serverless";
-import { and, asc, between, desc, eq, lt } from "drizzle-orm";
+import { and, asc, between, count, desc, eq, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import { AppError } from "../errors";
 import { getPostgresUrl } from "./connection";
@@ -179,6 +179,26 @@ export async function getRecentVisitsByUser({
       .limit(limit);
   } catch (_error) {
     throw new AppError("bad_request:database", "Failed to get recent visits");
+  }
+}
+
+export async function getUserStats({
+  userId,
+}: {
+  userId: string;
+}): Promise<{ visitCount: number; recordCount: number }> {
+  try {
+    const [{ visitCount }] = await db
+      .select({ visitCount: count() })
+      .from(visit)
+      .where(eq(visit.userId, userId));
+    const [{ recordCount }] = await db
+      .select({ recordCount: count() })
+      .from(record)
+      .where(eq(record.userId, userId));
+    return { visitCount, recordCount };
+  } catch (_error) {
+    throw new AppError("bad_request:database", "Failed to get user stats");
   }
 }
 
