@@ -1,5 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
+  doublePrecision,
+  index,
   pgTable,
   text,
   timestamp,
@@ -25,3 +27,24 @@ export const user = pgTable(
 );
 
 export type User = InferSelectModel<typeof user>;
+
+export const visit = pgTable(
+  "Visit",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    visitedAt: timestamp("visitedAt").notNull().defaultNow(),
+    lat: doublePrecision("lat").notNull(),
+    lng: doublePrecision("lng").notNull(),
+  },
+  (table) => ({
+    userVisitedIdx: index("Visit_user_visitedAt_idx").on(
+      table.userId,
+      table.visitedAt
+    ),
+  })
+);
+
+export type Visit = InferSelectModel<typeof visit>;

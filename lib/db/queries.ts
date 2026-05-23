@@ -1,10 +1,10 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, asc, between, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { ChatSDKError } from "../errors";
-import { type User, user } from "./schema";
+import { type User, user, type Visit, visit } from "./schema";
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
@@ -67,6 +67,73 @@ export async function upsertUserFromNaver(
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to upsert Naver user"
+    );
+  }
+}
+
+export async function recordVisit({
+  userId,
+  lat,
+  lng,
+}: {
+  userId: string;
+  lat: number;
+  lng: number;
+}): Promise<Visit> {
+  try {
+    const [inserted] = await db
+      .insert(visit)
+      .values({ userId, lat, lng })
+      .returning();
+    return inserted;
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to record visit");
+  }
+}
+
+export async function getVisitsForUserInRange({
+  userId,
+  start,
+  end,
+}: {
+  userId: string;
+  start: Date;
+  end: Date;
+}): Promise<Visit[]> {
+  try {
+    return await db
+      .select()
+      .from(visit)
+      .where(
+        and(eq(visit.userId, userId), between(visit.visitedAt, start, end))
+      )
+      .orderBy(asc(visit.visitedAt));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get visits for user"
+    );
+  }
+}
+
+export async function getRecentVisitsByUser({
+  userId,
+  limit = 10,
+}: {
+  userId: string;
+  limit?: number;
+}): Promise<Visit[]> {
+  try {
+    return await db
+      .select()
+      .from(visit)
+      .where(eq(visit.userId, userId))
+      .orderBy(desc(visit.visitedAt))
+      .limit(limit);
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get recent visits"
     );
   }
 }
