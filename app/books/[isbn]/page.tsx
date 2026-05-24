@@ -17,21 +17,29 @@ import { normalizeIsbn } from "@/lib/nat-lib";
 
 export default function BookDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ isbn: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   return (
     <>
       <Suspense fallback={<Skeleton />}>
-        <Content params={params} />
+        <Content params={params} searchParams={searchParams} />
       </Suspense>
       <BottomNav />
     </>
   );
 }
 
-async function Content({ params }: { params: Promise<{ isbn: string }> }) {
-  const { isbn: raw } = await params;
+async function Content({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ isbn: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const [{ isbn: raw }, { from }] = await Promise.all([params, searchParams]);
   const normalized = normalizeIsbn(raw);
   if (!normalized) {
     notFound();
@@ -52,14 +60,16 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
 
   const records = await cachedListRecordsForBook(book.id);
 
-  const formattedDate = formatPublishDate(book.publishDate);
   const writeHref = `/records/new?bookId=${book.id}`;
+  const fromRecords = from === "records";
+  const backHref = fromRecords ? "/records" : "/books";
+  const backLabel = fromRecords ? "기록" : "도서관";
 
   return (
     <main className="flex min-h-screen w-full justify-center bg-black font-sans text-white">
       <div className="relative flex w-full max-w-[430px] flex-col px-7 pt-12 pb-32">
-        <Link className="text-[14px] text-zinc-500" href="/books">
-          ← 도서관
+        <Link className="text-[14px] text-zinc-500" href={backHref}>
+          ← {backLabel}
         </Link>
 
         <header className="mt-6 flex gap-5">
@@ -84,12 +94,6 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
             {book.author && (
               <p className="mt-2 text-[14px] text-zinc-300">{book.author}</p>
             )}
-            {book.publisher && (
-              <p className="mt-1 text-[13px] text-zinc-500">{book.publisher}</p>
-            )}
-            {formattedDate && (
-              <p className="mt-1 text-[12px] text-zinc-600">{formattedDate}</p>
-            )}
           </div>
         </header>
 
@@ -103,30 +107,6 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
             </p>
           </section>
         )}
-
-        <section className="mt-8 flex flex-col gap-3 rounded-[16px] border border-zinc-900 bg-[#121212] p-5 text-[13px]">
-          <Row label="ISBN" mono value={book.isbn} />
-          <Divider />
-          <Row label="KDC" value={book.kdc} />
-          {book.description && (
-            <>
-              <Divider />
-              <Row
-                label="책 소개"
-                value={
-                  <a
-                    className="text-blue-400 underline-offset-2 hover:underline"
-                    href={book.description}
-                    rel="noreferrer noopener"
-                    target="_blank"
-                  >
-                    국립중앙도서관 안내 페이지
-                  </a>
-                }
-              />
-            </>
-          )}
-        </section>
 
         <section className="mt-10">
           <div className="flex items-center justify-between px-1">
@@ -170,50 +150,6 @@ async function Content({ params }: { params: Promise<{ isbn: string }> }) {
       </div>
     </main>
   );
-}
-
-function Row({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: React.ReactNode;
-  mono?: boolean;
-}) {
-  if (!value) {
-    return null;
-  }
-  return (
-    <div className="flex items-baseline justify-between gap-4">
-      <span className="font-bold text-[11px] uppercase tracking-wider text-zinc-500">
-        {label}
-      </span>
-      <span
-        className={
-          mono
-            ? "font-mono text-[13px] text-white"
-            : "text-right text-[13px] text-white"
-        }
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function Divider() {
-  return <div className="h-px bg-zinc-900" />;
-}
-
-function formatPublishDate(raw: string | null): string | null {
-  if (!raw || raw.length !== 8) {
-    return null;
-  }
-  const year = raw.slice(0, 4);
-  const month = raw.slice(4, 6);
-  const day = raw.slice(6, 8);
-  return `${year}.${month}.${day}`;
 }
 
 function Skeleton() {

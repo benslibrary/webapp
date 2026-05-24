@@ -64,7 +64,7 @@ async function Content() {
               <li key={r.id}>
                 <Link
                   className="flex gap-3 rounded-[16px] border border-zinc-900 bg-[#121212] p-4 transition-all active:scale-[0.99]"
-                  href={`/books/${r.bookIsbn}`}
+                  href={`/books/${r.bookIsbn}?from=records`}
                 >
                   {r.bookCoverImageUrl ? (
                     <Image
