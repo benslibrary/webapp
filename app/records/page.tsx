@@ -107,7 +107,7 @@ async function Content() {
   );
 }
 
-function formatDate(d: Date): string {
+function formatDate(d: Date | string): string {
   return kstDateStamp(d).replaceAll("-", ".");
 }
 

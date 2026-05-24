@@ -25,8 +25,11 @@ const KST_FORMATTER = new Intl.DateTimeFormat("en-CA", {
 });
 
 /** Returns YYYY-MM-DD in Asia/Seoul timezone. */
-export function kstDateStamp(date: Date = new Date()): string {
-  return KST_FORMATTER.format(date);
+export function kstDateStamp(
+  date: Date | string | number = new Date()
+): string {
+  const d = date instanceof Date ? date : new Date(date);
+  return KST_FORMATTER.format(d);
 }
 
 /** Returns [startUtc, endUtc) covering the given KST calendar day. */
